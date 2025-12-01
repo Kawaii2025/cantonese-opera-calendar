@@ -1,0 +1,88 @@
+li {
+  list-style-type: none;
+  /*     line-height: 28px; */
+  /*   text-align: end; */
+}
+
+ul {
+  padding-left: 0px;
+  line-height: 28px;
+  font-size: 14px;
+}
+
+.ant-badge-status-dot {
+  width: 20px;
+  height: 20px;
+}
+
+#badge {
+  /*   display:block; */
+  /*   max-width: 210px; */
+}
+
+#badge .ant-scroll-number.ant-badge-count {
+  position: absolute;
+  top: 2px;
+  /*     left: -22px; */
+  right: auto;
+  display: block;
+  /*   line-height: 10px; */
+}
+
+.ant-badge-status-text {
+  line-height: 22px;
+}
+
+.ant-badge-status-text {
+  padding-left: 24px;
+}
+
+.item-content {
+  /*   padding-left: 4px; */
+}
+
+.item-content .item-location {
+  /*   position: relative; */
+  /*   display: block; */
+  padding-left: 8px;
+  padding: 4px;
+  margin-left: 2px;
+  background: #e6f4ff;
+  font-size: 13px;
+  /*   top: 2px; */
+}
+
+.ant-picker-content {
+  text-align: left;
+}
+
+.item-troupe {
+  padding: 6px 0;
+
+  /*   line-height: 35px; */
+}
+
+.item-play-name {
+  display: block;
+  font-size: 18px;
+  padding: 6px 0;
+}
+
+.ant-picker-body th {
+  padding-inline-end: 0px !important;
+  padding-left: 14px !important;
+}
+
+.ant-select-arrow {
+  display: none !important;
+}
+
+.ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content {
+  /*   min-height: 200px; */
+  /*   overflow: hidden; */
+  /*   max-height: 400px; */
+  height: 160px;
+  /*   height: auto; */
+  /*   min-height: 250px; */
+  !important;
+}
