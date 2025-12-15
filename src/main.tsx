@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio } from 'antd';
+import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import { usePageScroll } from './hooks/usePageScroll';
@@ -146,6 +146,10 @@ if (container) {
   };
   
   const CalendarApp = ({ currentDate, onDateChange }: { currentDate: dayjs.Dayjs; onDateChange: (date: dayjs.Dayjs) => void }) => {
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
+    const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
+    
     const monthCellRender = (value: dayjs.Dayjs) => {
       const num = getMonthData(value);
       return num ? (
@@ -192,19 +196,39 @@ if (container) {
 
     const dateCellRender = (value: dayjs.Dayjs) => {
       const listData = getListData(value);
+      const displayData = listData.slice(0, 3);
+      const remainingCount = listData.length - 3;
+      
+      const handleCellClick = () => {
+        if (listData.length > 0) {
+          setSelectedDate(value);
+          setSelectedEvents(listData);
+          setModalVisible(true);
+        }
+      };
+      
+      const renderItem = (item: any, index: number) => (
+        <li key={index} className="item-troupe">
+          <Flex gap="4px 0" wrap>
+            {troupeRender(item.troupe)}
+            {cityRender(item.city)}
+            {locationRender(item.location)}
+          </Flex>
+          <span className="item-content item-play-name">{item.content}</span>
+        </li>
+      );
+      
       return (
-        <ul className="events">
-          {listData.map((item, index) => (
-            <li key={index} className="item-troupe">
-              <Flex gap="4px 0" wrap>
-                {troupeRender(item.troupe)}
-                {cityRender(item.city)}
-                {locationRender(item.location)}
-              </Flex>
-              <span className="item-content item-play-name">{item.content}</span>
-            </li>
-          ))}
-        </ul>
+        <div onClick={handleCellClick} className="date-cell-content">
+          <ul className="events">
+            {displayData.map((item, index) => renderItem(item, index))}
+            {remainingCount > 0 && (
+              <li className="more-events">
+                还有 {remainingCount} 场...
+              </li>
+            )}
+          </ul>
+        </div>
       );
     };
 
@@ -223,6 +247,37 @@ if (container) {
           fullscreen={true}
           headerRender={() => null}
         />
+        
+        <Modal
+          title={selectedDate ? `${selectedDate.format('YYYY年MM月DD日')} 演出安排` : '演出安排'}
+          open={modalVisible}
+          onCancel={() => setModalVisible(false)}
+          footer={null}
+          width={700}
+          className="event-modal"
+        >
+          <div className="modal-events-list">
+            {selectedEvents.map((item, index) => (
+              <div key={index} className="modal-event-item">
+                <div className="modal-event-header">
+                  <Flex gap="4px 0" wrap>
+                    {troupeRender(item.troupe)}
+                    {cityRender(item.city)}
+                    {locationRender(item.location)}
+                  </Flex>
+                </div>
+                <div className="modal-event-content">
+                  <strong>{item.content}</strong>
+                </div>
+                {item.type && (
+                  <div className="modal-event-time">
+                    {item.type === 'afternoon' ? '下午场' : '晚场'}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Modal>
       </div>
     );
   };
