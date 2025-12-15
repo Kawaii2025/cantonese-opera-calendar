@@ -1,21 +1,16 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message } from 'antd';
+import { ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
-import weekday from 'dayjs/plugin/weekday';
+import { CustomCalendar } from './components/CustomCalendar';
+import { MobileCardView } from './components/MobileCardView';
 import { usePageScroll } from './hooks/usePageScroll';
 import { api, Event } from './api';
 import './style.css';
-
-// 配置dayjs周一开始
-dayjs.extend(weekday);
-
-// 修改locale使周一开始  
-const customLocale = {
-  ...zhCN,
-  week: ['日', '一', '二', '三', '四', '五', '六']
-};
+import './styles/custom-calendar.css';
+import './styles/mobile.css';
+import './styles/mobile-card-view.css';
 
 const defaultDate = dayjs(); // 默认打开当前月份
 let filter = (data: any[]) => data;
@@ -33,6 +28,7 @@ if (container) {
   const RootApp = () => {
     const [currentDate, setCurrentDate] = useState(defaultDate);
     const [modalVisible, setModalVisible] = useState(false);
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
     
     // 暂时禁用滚动翻页功能
     // usePageScroll(currentDate, setCurrentDate, modalVisible);
@@ -72,6 +68,14 @@ if (container) {
                 <Radio.Button value="month">月</Radio.Button>
                 <Radio.Button value="year">年</Radio.Button>
               </Radio.Group>
+              <Radio.Group 
+                value={viewMode} 
+                onChange={(e) => setViewMode(e.target.value)}
+                buttonStyle="solid"
+              >
+                <Radio.Button value="calendar">日历</Radio.Button>
+                <Radio.Button value="list">列表</Radio.Button>
+              </Radio.Group>
             </div>
           </div>
         </Layout.Header>
@@ -81,6 +85,7 @@ if (container) {
             onDateChange={setCurrentDate}
             modalVisible={modalVisible}
             setModalVisible={setModalVisible}
+            viewMode={viewMode}
           />
         </Layout.Content>
       </Layout>
@@ -91,12 +96,14 @@ if (container) {
     currentDate, 
     onDateChange,
     modalVisible,
-    setModalVisible
+    setModalVisible,
+    viewMode
   }: { 
     currentDate: dayjs.Dayjs; 
     onDateChange: (date: dayjs.Dayjs) => void;
     modalVisible: boolean;
     setModalVisible: (visible: boolean) => void;
+    viewMode: 'calendar' | 'list';
   }) => {
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
@@ -185,6 +192,37 @@ if (container) {
       ) : null;
     };
 
+    const handleCellClick = useCallback((value: dayjs.Dayjs) => {
+      const dateKey = value.format('YYYY-MM-DD');
+      const listData = eventsByDate.get(dateKey) || [];
+      const now = Date.now();
+      const last = lastClickRef.current;
+      
+      // 检测双击 (300ms 内两次点击)
+      if (last && last.date === dateKey && now - last.time < 300) {
+        // 双击 - 进入编辑模式
+        setSelectedDate(value);
+        setEditingDate(value);
+        setEditModalVisible(true);
+        lastClickRef.current = null;
+      } else {
+        // 单击 - 记录点击信息，等待可能的第二次点击
+        lastClickRef.current = { date: dateKey, time: now };
+        
+        // 延迟300ms后，如果没有第二次点击则显示详情
+        setTimeout(() => {
+          // 检查是否已经触发了双击
+          if (lastClickRef.current && lastClickRef.current.date === dateKey && lastClickRef.current.time === now) {
+            if (listData.length > 0) {
+              setSelectedDate(value);
+              setSelectedEvents(listData);
+              setModalVisible(true);
+            }
+          }
+        }, 300);
+      }
+    }, [eventsByDate]);
+
     const cityRender = (city: string) => {
       const map: Record<string, string> = {
         广州: 'red',
@@ -227,35 +265,6 @@ if (container) {
       const displayData = listData.slice(0, 2);
       const remainingCount = listData.length - 2;
       
-      const handleCellClick = (e: React.MouseEvent) => {
-        const now = Date.now();
-        const last = lastClickRef.current;
-        
-        // 检测双击 (300ms 内两次点击)
-        if (last && last.date === dateKey && now - last.time < 300) {
-          // 双击 - 进入编辑模式
-          setSelectedDate(value);
-          setEditingDate(value);
-          setEditModalVisible(true);
-          lastClickRef.current = null;
-        } else {
-          // 单击 - 记录点击信息，等待可能的第二次点击
-          lastClickRef.current = { date: dateKey, time: now };
-          
-          // 延迟300ms后，如果没有第二次点击则显示详情
-          setTimeout(() => {
-            // 检查是否已经触发了双击
-            if (lastClickRef.current && lastClickRef.current.date === dateKey && lastClickRef.current.time === now) {
-              if (listData.length > 0) {
-                setSelectedDate(value);
-                setSelectedEvents(listData);
-                setModalVisible(true);
-              }
-            }
-          }, 300);
-        }
-      };
-      
       const renderItem = (item: any, index: number) => {
         // 如果剧目没有书名号，则添加
         const content = item.content.startsWith('《') && item.content.endsWith('》') 
@@ -282,7 +291,6 @@ if (container) {
       
       return (
         <div 
-          onClick={handleCellClick}
           className="date-cell-content"
           style={{ 
             cursor: 'pointer',
@@ -324,13 +332,28 @@ if (container) {
           />
         )}
         <Spin spinning={loading} tip="加载中...">
-          <Calendar 
-          cellRender={cellRender} 
-          value={currentDate} 
-          onChange={onDateChange} 
-          fullscreen={true}
-          headerRender={() => null}
-        />
+          {viewMode === 'calendar' ? (
+            <CustomCalendar 
+              cellRender={(date) => dateCellRender(date)} 
+              value={currentDate} 
+              onChange={onDateChange}
+              onCellClick={handleCellClick}
+            />
+          ) : (
+            <MobileCardView 
+              currentDate={currentDate}
+              events={events}
+              onEventClick={(event) => {
+                setSelectedEvents([event]);
+                setSelectedDate(dayjs(event.date));
+                setModalVisible(true);
+              }}
+              onAddEvent={(date) => {
+                setEditingDate(dayjs(date));
+                setEditModalVisible(true);
+              }}
+            />
+          )}
         </Spin>
         
         <Modal
@@ -447,7 +470,7 @@ if (container) {
   };
   
   root.render(
-    <ConfigProvider locale={customLocale}>
+    <ConfigProvider locale={zhCN}>
       <RootApp />
     </ConfigProvider>
   );

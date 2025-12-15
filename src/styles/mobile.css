@@ -1,0 +1,208 @@
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .app-header {
+    padding: 12px 16px !important;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header-title {
+    font-size: 18px !important;
+    margin: 0 !important;
+  }
+
+  .header-date-controls {
+    flex-direction: row;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .header-date-controls .ant-select {
+    min-width: 70px !important;
+  }
+
+  /* 日历网格调整 */
+  .custom-calendar {
+    padding: 8px !important;
+  }
+
+  .calendar-grid {
+    gap: 0px;
+  }
+
+  .calendar-weekday {
+    padding: 8px 4px !important;
+    font-size: 12px !important;
+    font-weight: 500;
+  }
+
+  .calendar-cell {
+    padding: 6px 4px !important;
+    min-height: auto;
+    font-size: 12px;
+  }
+
+  .cell-date {
+    font-size: 12px !important;
+    margin-bottom: 2px !important;
+    min-height: 16px;
+  }
+
+  .cell-content {
+    font-size: 11px !important;
+    gap: 1px !important;
+  }
+
+  /* 演出列表样式 */
+  .item-troupe {
+    font-size: 11px !important;
+  }
+
+  .item-play-name {
+    font-size: 11px !important;
+    line-height: 1.2;
+    margin: 1px 0 0 0 !important;
+  }
+
+  .more-events {
+    font-size: 10px !important;
+    padding: 2px 0 !important;
+  }
+
+  /* Tag样式调整 */
+  .ant-tag {
+    font-size: 10px !important;
+    padding: 0 4px !important;
+    margin: 1px 2px 1px 0 !important;
+  }
+
+  /* 模态框调整 */
+  .event-modal .ant-modal-content {
+    padding: 16px !important;
+  }
+
+  .event-modal .ant-modal-header {
+    padding: 12px 16px !important;
+  }
+
+  .event-modal .ant-modal-title {
+    font-size: 14px !important;
+  }
+
+  .modal-events-list {
+    max-height: 60vh !important;
+  }
+
+  .modal-event-item {
+    padding: 12px !important;
+  }
+
+  .modal-event-header {
+    margin-bottom: 6px !important;
+  }
+
+  .modal-event-content {
+    font-size: 12px !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* 编辑模态框调整 */
+  .edit-modal .ant-modal-content {
+    padding: 16px !important;
+  }
+
+  .edit-modal .ant-form-item {
+    margin-bottom: 12px !important;
+  }
+
+  .edit-modal .ant-form-item-label > label {
+    font-size: 12px !important;
+  }
+
+  .edit-modal .ant-input,
+  .edit-modal .ant-select {
+    font-size: 12px !important;
+  }
+
+  /* 按钮调整 */
+  .ant-btn {
+    font-size: 12px !important;
+    padding: 4px 12px !important;
+    height: 32px !important;
+  }
+
+  /* 去掉不必要的边距 */
+  .ant-layout-content {
+    padding: 0 !important;
+  }
+}
+
+/* 超小屏幕 */
+@media (max-width: 480px) {
+  .header-title {
+    font-size: 16px !important;
+  }
+
+  .calendar-weekday {
+    padding: 6px 2px !important;
+    font-size: 11px !important;
+  }
+
+  .calendar-cell {
+    padding: 4px 2px !important;
+  }
+
+  .cell-date {
+    font-size: 11px !important;
+  }
+
+  .cell-content {
+    font-size: 10px !important;
+  }
+
+  .item-play-name {
+    font-size: 10px !important;
+  }
+
+  .ant-tag {
+    font-size: 9px !important;
+    padding: 0 3px !important;
+    margin: 1px 1px 1px 0 !important;
+  }
+
+  .more-events {
+    font-size: 9px !important;
+  }
+
+  /* 隐藏某些不必要的元素以节省空间 */
+  .header-date-controls .ant-radio-button-wrapper {
+    padding: 0 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* 平板设备 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .custom-calendar {
+    padding: 12px !important;
+  }
+
+  .calendar-cell {
+    padding: 8px !important;
+  }
+
+  .cell-date {
+    font-size: 13px !important;
+  }
+
+  .cell-content {
+    font-size: 11px !important;
+  }
+
+  .item-play-name {
+    font-size: 12px !important;
+  }
+}

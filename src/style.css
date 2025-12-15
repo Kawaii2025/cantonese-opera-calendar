@@ -16,11 +16,6 @@ ul {
   height: 20px;
 }
 
-#badge {
-  /*   display:block; */
-  /*   max-width: 210px; */
-}
-
 #badge .ant-scroll-number.ant-badge-count {
   position: absolute;
   top: 2px;
@@ -36,10 +31,6 @@ ul {
 
 .ant-badge-status-text {
   padding-left: 24px;
-}
-
-.item-content {
-  /*   padding-left: 4px; */
 }
 
 .item-content .item-location {
@@ -269,13 +260,14 @@ ul {
   background: white;
   border-bottom: 1px solid #f0f0f0;
   padding: 0 24px !important;
-  height: 64px !important;
+  height: auto !important;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 999;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  min-height: 64px;
 }
 
 .header-content {
@@ -283,13 +275,25 @@ ul {
   justify-content: space-between;
   align-items: center;
   height: 100%;
+  gap: 16px;
+  padding: 16px 0;
+  flex-wrap: wrap;
 }
 
 .header-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   color: #262626;
+  flex: 1 1 100%;
+  min-width: 100%;
+}
+
+.header-date-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .header-date-controls {
@@ -308,11 +312,12 @@ ul {
 }
 
 .ant-layout-content {
-  margin-top: 64px;
+  margin-top: 130px;
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   display: flex;
   flex-direction: column;
+  padding: 0 !important;
 }
 
 .ant-picker-calendar-full .ant-picker-content {
