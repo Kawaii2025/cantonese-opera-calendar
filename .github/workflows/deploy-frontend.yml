@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   # Build job
-  build:
+  build-frontend:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -51,7 +51,7 @@ jobs:
           path: ./dist
 
   # Deployment job
-  deploy:
+  deploy-frontend:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
