@@ -281,10 +281,10 @@ if (container) {
         
         return (
           <li key={index} className="item-troupe">
-            <Flex gap="4px 0" wrap>
+            <Flex gap="4px 0" wrap align="center">
               {troupeRender(item.troupe)}
               {cityRender(item.city)}
-              <span style={{ fontSize: '12px', color: '#666' }}>{timeLabel}</span>
+              <span style={{ fontSize: '12px', color: '#666', lineHeight: '20px', height: '20px', display: 'inline-block' }}>{timeLabel}</span>
               {locationRender(item.location)}
             </Flex>
             <span className="item-content item-play-name">{content}</span>

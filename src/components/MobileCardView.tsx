@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import dayjs from 'dayjs';
-import { Tag, Flex } from 'antd';
 import { Event } from '../api';
+import { cityColors, troupeColors } from '../constants/colors';
 import '../styles/mobile-card-view.css';
 
 interface MobileCardViewProps {
@@ -38,30 +38,6 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
   const dates = Array.from({ length: daysInMonth }, (_, i) => 
     dayjs(`${year}-${month}-${i + 1}`)
   );
-
-  // 颜色配置
-  const cityColors: Record<string, string> = {
-    广州: 'red',
-    佛山: 'orange',
-    深圳: 'magenta',
-    东莞: 'volcano',
-    茂名: 'gold',
-    湛江: 'green',
-    香港: 'purple',
-    北海: 'cyan',
-    珠海: 'blue',
-  };
-
-  const troupeColors: Record<string, string> = {
-    广州团: '#2f54eb',
-    佛山团: '#f5222d',
-    红豆团: '#ff4d4f',
-    省一团: '#faad14',
-    省二团: '#a0d911',
-    深圳团: '#eb2f96',
-    珠海团: '#ffc53d',
-    省院: '#fa541c',
-  };
 
   return (
     <div className="mobile-card-view">
@@ -110,15 +86,34 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
                       onClick={() => onEventClick?.(event)}
                     >
                       <div className="card-header">
-                        <div className="tags-group">
+                        <div className="tags-group" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                           <span
-                            className="troupe-tag"
-                            style={{ backgroundColor: troupeColor }}
+                            style={{ 
+                              backgroundColor: troupeColor,
+                              color: 'white',
+                              padding: '4px 8px',
+                              borderRadius: '2px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap'
+                            }}
                           >
                             {event.troupe}
                           </span>
-                          <Tag color={cityColor}>{event.city}</Tag>
-                          <span style={{ fontSize: '12px', color: '#666' }}>
+                          <span 
+                            style={{ 
+                              backgroundColor: cityColor,
+                              color: 'white',
+                              padding: '4px 8px',
+                              borderRadius: '2px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {event.city}
+                          </span>
+                          <span style={{ fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}>
                             {timeLabel}
                           </span>
                         </div>

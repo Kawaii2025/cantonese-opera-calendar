@@ -1,7 +1,6 @@
 import { jsxs as _jsxs, jsx as _jsx } from "react/jsx-runtime";
 import { useMemo } from 'react';
 import dayjs from 'dayjs';
-import { Tag } from 'antd';
 import '../styles/mobile-card-view.css';
 export const MobileCardView = ({ currentDate, events, onEventClick, onAddEvent }) => {
     const year = currentDate.year();
@@ -58,7 +57,23 @@ export const MobileCardView = ({ currentDate, events, onEventClick, onAddEvent }
                                     const content = event.content.startsWith('《') && event.content.endsWith('》')
                                         ? event.content
                                         : `《${event.content}》`;
-                                    return (_jsxs("div", { className: "event-card", onClick: () => onEventClick?.(event), children: [_jsx("div", { className: "card-header", children: _jsxs("div", { className: "tags-group", children: [_jsx("span", { className: "troupe-tag", style: { backgroundColor: troupeColor }, children: event.troupe }), _jsx(Tag, { color: cityColor, children: event.city }), _jsx("span", { style: { fontSize: '12px', color: '#666' }, children: timeLabel })] }) }), _jsxs("div", { className: "card-content", children: [_jsx("p", { className: "play-name", children: content }), _jsxs("p", { className: "location", children: [_jsx("span", { className: "location-icon", children: "\uD83D\uDCCD" }), event.location] })] })] }, idx));
+                                    return (_jsxs("div", { className: "event-card", onClick: () => onEventClick?.(event), children: [_jsx("div", { className: "card-header", children: _jsxs("div", { className: "tags-group", style: { display: 'flex', gap: '8px', alignItems: 'center' }, children: [_jsx("span", { style: {
+                                                                backgroundColor: troupeColor,
+                                                                color: 'white',
+                                                                padding: '2px 8px',
+                                                                borderRadius: '2px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 600,
+                                                                whiteSpace: 'nowrap'
+                                                            }, children: event.troupe }), _jsx("span", { style: {
+                                                                backgroundColor: cityColor || '#f0f0f0',
+                                                                color: cityColor ? 'white' : '#666',
+                                                                padding: '2px 8px',
+                                                                borderRadius: '2px',
+                                                                fontSize: '12px',
+                                                                fontWeight: 600,
+                                                                whiteSpace: 'nowrap'
+                                                            }, children: event.city }), _jsx("span", { style: { fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }, children: timeLabel })] }) }), _jsxs("div", { className: "card-content", children: [_jsx("p", { className: "play-name", children: content }), _jsxs("p", { className: "location", children: [_jsx("span", { className: "location-icon", children: "\uD83D\uDCCD" }), event.location] })] })] }, idx));
                                 }) })] }, dateKey));
                 }) }), events.length === 0 && (_jsx("div", { className: "empty-state", children: _jsx("p", { children: "\u8BE5\u6708\u6682\u65E0\u6F14\u51FA\u5B89\u6392" }) }))] }));
 };
