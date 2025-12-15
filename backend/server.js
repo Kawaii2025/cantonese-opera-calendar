@@ -8,7 +8,25 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// CORS configuration
+const corsOrigins = process.env.CORS_ORIGINS 
+  ? process.env.CORS_ORIGINS.split(',').map(url => url.trim())
+  : [
+      'http://localhost:5173',      // Vite dev server default
+      'http://localhost:3000',      // Alternative frontend port
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000'
+    ];
+
+const corsOptions = {
+  origin: corsOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // 公用选择列（3NF 联表，返回名字而非 id）
