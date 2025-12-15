@@ -3,17 +3,19 @@ import dayjs from 'dayjs';
 
 /**
  * Custom hook for page-level scroll navigation between months
- * Scrolling up/down on the page (but not inside calendar cells) navigates to previous/next month
+ * Scrolling up/down anywhere on the page navigates to previous/next month
  */
-export const usePageScroll = (currentDate: dayjs.Dayjs, onDateChange: (date: dayjs.Dayjs) => void) => {
+export const usePageScroll = (
+  currentDate: dayjs.Dayjs, 
+  onDateChange: (date: dayjs.Dayjs) => void,
+  isModalOpen: boolean = false
+) => {
   const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      // Only handle wheel events that aren't inside calendar date content
-      const calendarContent = (e.target as HTMLElement).closest('.ant-picker-calendar-date-content');
-      if (calendarContent) {
-        // If scrolling inside calendar, don't change months
+      // Don't change months when modal is open
+      if (isModalOpen) {
         return;
       }
       
@@ -29,5 +31,5 @@ export const usePageScroll = (currentDate: dayjs.Dayjs, onDateChange: (date: day
     
     window.addEventListener('wheel', handleWheel, { passive: true });
     return () => window.removeEventListener('wheel', handleWheel);
-  }, [currentDate, onDateChange]);
+  }, [currentDate, onDateChange, isModalOpen]);
 };

@@ -98,7 +98,9 @@ if (container) {
   
   const RootApp = () => {
     const [currentDate, setCurrentDate] = useState(dayjs(defaultDate));
-    usePageScroll(currentDate, setCurrentDate);
+    const [modalVisible, setModalVisible] = useState(false);
+    
+    usePageScroll(currentDate, setCurrentDate, modalVisible);
     
     const year = currentDate.year();
     const month = currentDate.month();
@@ -139,14 +141,28 @@ if (container) {
           </div>
         </Layout.Header>
         <Layout.Content style={{ paddingTop: 0 }}>
-          <CalendarApp currentDate={currentDate} onDateChange={setCurrentDate} />
+          <CalendarApp 
+            currentDate={currentDate} 
+            onDateChange={setCurrentDate}
+            modalVisible={modalVisible}
+            setModalVisible={setModalVisible}
+          />
         </Layout.Content>
       </Layout>
     );
   };
   
-  const CalendarApp = ({ currentDate, onDateChange }: { currentDate: dayjs.Dayjs; onDateChange: (date: dayjs.Dayjs) => void }) => {
-    const [modalVisible, setModalVisible] = useState(false);
+  const CalendarApp = ({ 
+    currentDate, 
+    onDateChange,
+    modalVisible,
+    setModalVisible
+  }: { 
+    currentDate: dayjs.Dayjs; 
+    onDateChange: (date: dayjs.Dayjs) => void;
+    modalVisible: boolean;
+    setModalVisible: (visible: boolean) => void;
+  }) => {
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
     
