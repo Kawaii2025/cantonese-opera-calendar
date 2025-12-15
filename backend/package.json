@@ -1,0 +1,23 @@
+{
+  "name": "cantonese-opera-backend",
+  "version": "1.0.0",
+  "description": "Backend API for Cantonese Opera Calendar",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node --watch server.js",
+    "start": "node server.js",
+    "migrate": "node migrate.js",
+    "seed": "node seed.js",
+    "test-connection": "node test-connection.js",
+    "init": "node init.js",
+    "clear": "node clear.js",
+    "manage": "node manage.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
+  }
+}
