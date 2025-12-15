@@ -6,8 +6,9 @@ li {
 
 ul {
   padding-left: 0px;
-  line-height: 28px;
-  font-size: 14px;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.3;
 }
 
 .ant-badge-status-dot {
@@ -52,20 +53,34 @@ ul {
   /*   top: 2px; */
 }
 
+.item-troupe .ant-tag {
+  margin: 0 2px 0 0 !important;
+  font-size: 11px !important;
+  padding: 0 4px !important;
+  height: 18px !important;
+  line-height: 18px !important;
+}
+
 .ant-picker-content {
   text-align: left;
 }
 
 .item-troupe {
-  padding: 6px 0;
-
-  /*   line-height: 35px; */
+  padding: 4px 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .item-play-name {
   display: block;
-  font-size: 18px;
-  padding: 6px 0;
+  font-size: 12px;
+  padding: 0;
+  margin: 1px 0 0 0;
+  line-height: 1.25;
+  font-weight: 500;
+  color: #262626;
 }
 
 .ant-picker-body th {
@@ -78,11 +93,25 @@ ul {
 }
 
 .ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content {
-  /*   min-height: 200px; */
-  /*   overflow: hidden; */
-  /*   max-height: 400px; */
-  height: 160px;
-  /*   height: auto; */
-  /*   min-height: 250px; */
-  !important;
+  height: 280px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+
+.ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 2px;
+}
+
+.ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content::-webkit-scrollbar-thumb:hover {
+  background: #b3b3b3;
 }
