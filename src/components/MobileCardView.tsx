@@ -96,7 +96,6 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
                 {dayEvents.map((event, idx) => {
                   const isAfternoon = event.type === 'afternoon';
                   const timeLabel = isAfternoon ? '下午场' : '晚场';
-                  const timeColor = isAfternoon ? '#faad14' : '#1890ff';
                   const troupeColor = troupeColors[event.troupe] || '#262626';
                   const cityColor = cityColors[event.city] || '';
 
@@ -119,7 +118,7 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
                             {event.troupe}
                           </span>
                           <Tag color={cityColor}>{event.city}</Tag>
-                          <span className="time-tag" style={{ color: timeColor }}>
+                          <span style={{ fontSize: '12px', color: '#666' }}>
                             {timeLabel}
                           </span>
                         </div>

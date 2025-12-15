@@ -259,7 +259,7 @@ ul {
 .app-header {
   background: white;
   border-bottom: 1px solid #f0f0f0;
-  padding: 0 24px !important;
+  padding: 12px 24px !important;
   height: auto !important;
   position: fixed;
   top: 0;
@@ -267,39 +267,33 @@ ul {
   right: 0;
   z-index: 999;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  min-height: 64px;
 }
 
 .header-content {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   height: 100%;
-  gap: 16px;
-  padding: 16px 0;
-  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
 }
 
 .header-title {
   margin: 0;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #262626;
-  flex: 1 1 100%;
-  min-width: 100%;
-}
-
-.header-date-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .header-date-controls {
   display: flex;
   gap: 8px;
   align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 /* Adjust layout for fixed header */
@@ -312,7 +306,7 @@ ul {
 }
 
 .ant-layout-content {
-  margin-top: 130px;
+  margin-top: 95px;
   flex: 1;
   overflow: auto;
   display: flex;

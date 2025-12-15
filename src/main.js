@@ -27,6 +27,7 @@ if (container) {
         const [currentDate, setCurrentDate] = useState(defaultDate);
         const [modalVisible, setModalVisible] = useState(false);
         const [viewMode, setViewMode] = useState('calendar');
+        const [events, setEvents] = useState([]);
         // 暂时禁用滚动翻页功能
         // usePageScroll(currentDate, setCurrentDate, modalVisible);
         const year = currentDate.year();
@@ -39,9 +40,9 @@ if (container) {
             label: dayjs().month(i).format('MMM'),
             value: i,
         }));
-        return (_jsxs(Layout, { style: { minHeight: '100vh' }, children: [_jsx(Layout.Header, { className: "app-header", children: _jsxs("div", { className: "header-content", children: [_jsx("h1", { className: "header-title", children: "2025\u5E74\u7CA4\u5267\u6625\u73ED\u65E5\u5386" }), _jsxs("div", { className: "header-date-controls", children: [_jsx(Select, { value: year, options: yearOptions, onChange: (newYear) => setCurrentDate(currentDate.year(newYear)), style: { width: 100 } }), _jsx(Select, { value: month, options: monthOptions, onChange: (newMonth) => setCurrentDate(currentDate.month(newMonth)), style: { width: 80 } }), _jsxs(Radio.Group, { value: "month", buttonStyle: "solid", children: [_jsx(Radio.Button, { value: "month", children: "\u6708" }), _jsx(Radio.Button, { value: "year", children: "\u5E74" })] }), _jsxs(Radio.Group, { value: viewMode, onChange: (e) => setViewMode(e.target.value), buttonStyle: "solid", children: [_jsx(Radio.Button, { value: "calendar", children: "\u65E5\u5386" }), _jsx(Radio.Button, { value: "list", children: "\u5217\u8868" })] })] })] }) }), _jsx(Layout.Content, { style: { paddingTop: 0 }, children: _jsx(CalendarApp, { currentDate: currentDate, onDateChange: setCurrentDate, modalVisible: modalVisible, setModalVisible: setModalVisible, viewMode: viewMode }) })] }));
+        return (_jsxs(Layout, { style: { minHeight: '100vh' }, children: [_jsx(Layout.Header, { className: "app-header", children: _jsxs("div", { className: "header-content", children: [_jsx("h1", { className: "header-title", children: "2025\u5E74\u7CA4\u5267\u6625\u73ED\u65E5\u5386" }), _jsxs("div", { className: "header-date-controls", children: [_jsx(Select, { value: year, options: yearOptions, onChange: (newYear) => setCurrentDate(currentDate.year(newYear)), style: { width: 100 } }), _jsx(Select, { value: month, options: monthOptions, onChange: (newMonth) => setCurrentDate(currentDate.month(newMonth)), style: { width: 80 } }), _jsx(ExportImage, { events: events, currentDate: currentDate }), _jsxs(Radio.Group, { value: viewMode, onChange: (e) => setViewMode(e.target.value), buttonStyle: "solid", children: [_jsx(Radio.Button, { value: "calendar", children: "\u65E5\u5386" }), _jsx(Radio.Button, { value: "list", children: "\u5217\u8868" })] })] })] }) }), _jsx(Layout.Content, { style: { paddingTop: 0 }, children: _jsx(CalendarApp, { currentDate: currentDate, onDateChange: setCurrentDate, modalVisible: modalVisible, setModalVisible: setModalVisible, viewMode: viewMode, onEventsChange: setEvents }) })] }));
     };
-    const CalendarApp = ({ currentDate, onDateChange, modalVisible, setModalVisible, viewMode }) => {
+    const CalendarApp = ({ currentDate, onDateChange, modalVisible, setModalVisible, viewMode, onEventsChange }) => {
         const [selectedDate, setSelectedDate] = useState(null);
         const [selectedEvents, setSelectedEvents] = useState([]);
         const [events, setEvents] = useState([]);
@@ -61,6 +62,7 @@ if (container) {
                 const month = date.month() + 1; // dayjs months are 0-indexed
                 const data = await api.getEventsByMonth(year, month);
                 setEvents(data);
+                onEventsChange?.(data);
             }
             catch (err) {
                 console.error('Failed to fetch events:', err);
@@ -193,8 +195,7 @@ if (container) {
                 // 根据type字段确定显示的时间标签
                 const isAfternoon = item.type === 'afternoon';
                 const timeLabel = isAfternoon ? '下午场' : '晚场';
-                const timeColor = isAfternoon ? '#faad14' : '#1890ff';
-                return (_jsxs("li", { className: "item-troupe", children: [_jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), _jsx(Tag, { color: timeColor, style: { margin: 0 }, children: timeLabel }), locationRender(item.location)] }), _jsx("span", { className: "item-content item-play-name", children: content })] }, index));
+                return (_jsxs("li", { className: "item-troupe", children: [_jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), _jsx("span", { style: { fontSize: '12px', color: '#666' }, children: timeLabel }), locationRender(item.location)] }), _jsx("span", { className: "item-content item-play-name", children: content })] }, index));
             };
             return (_jsx("div", { className: "date-cell-content", style: {
                     cursor: 'pointer',
@@ -210,7 +211,7 @@ if (container) {
                 return monthCellRender(current);
             return info.originNode;
         };
-        return (_jsxs("div", { className: "calendar-wrapper", children: [_jsx("div", { style: { marginBottom: 16, padding: '0 16px' }, children: _jsx(ExportImage, { events: events, currentDate: currentDate }) }), error && (_jsx(Alert, { message: "\u9519\u8BEF", description: error, type: "error", showIcon: true, closable: true, onClose: () => setError(null), style: { marginBottom: 16 } })), _jsx(Spin, { spinning: loading, tip: "\u52A0\u8F7D\u4E2D...", children: viewMode === 'calendar' ? (_jsx(CustomCalendar, { cellRender: (date) => dateCellRender(date), value: currentDate, onChange: onDateChange, onCellClick: handleCellClick })) : (_jsx(MobileCardView, { currentDate: currentDate, events: events, onEventClick: (event) => {
+        return (_jsxs("div", { className: "calendar-wrapper", children: [_jsx(ExportImage, { events: events, currentDate: currentDate }), error && (_jsx(Alert, { message: "\u9519\u8BEF", description: error, type: "error", showIcon: true, closable: true, onClose: () => setError(null), style: { marginBottom: 16 } })), _jsx(Spin, { spinning: loading, tip: "\u52A0\u8F7D\u4E2D...", children: viewMode === 'calendar' ? (_jsx(CustomCalendar, { cellRender: (date) => dateCellRender(date), value: currentDate, onChange: onDateChange, onCellClick: handleCellClick })) : (_jsx(MobileCardView, { currentDate: currentDate, events: events, onEventClick: (event) => {
                             setSelectedEvents([event]);
                             setSelectedDate(dayjs(event.date));
                             setModalVisible(true);

@@ -31,6 +31,7 @@ if (container) {
     const [currentDate, setCurrentDate] = useState(defaultDate);
     const [modalVisible, setModalVisible] = useState(false);
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const [events, setEvents] = useState<Event[]>([]);
     
     // 暂时禁用滚动翻页功能
     // usePageScroll(currentDate, setCurrentDate, modalVisible);
@@ -66,10 +67,7 @@ if (container) {
                 onChange={(newMonth) => setCurrentDate(currentDate.month(newMonth))}
                 style={{ width: 80 }}
               />
-              <Radio.Group value="month" buttonStyle="solid">
-                <Radio.Button value="month">月</Radio.Button>
-                <Radio.Button value="year">年</Radio.Button>
-              </Radio.Group>
+              <ExportImage events={events} currentDate={currentDate} />
               <Radio.Group 
                 value={viewMode} 
                 onChange={(e) => setViewMode(e.target.value)}
@@ -88,6 +86,7 @@ if (container) {
             modalVisible={modalVisible}
             setModalVisible={setModalVisible}
             viewMode={viewMode}
+            onEventsChange={setEvents}
           />
         </Layout.Content>
       </Layout>
@@ -99,13 +98,15 @@ if (container) {
     onDateChange,
     modalVisible,
     setModalVisible,
-    viewMode
+    viewMode,
+    onEventsChange
   }: { 
     currentDate: dayjs.Dayjs; 
     onDateChange: (date: dayjs.Dayjs) => void;
     modalVisible: boolean;
     setModalVisible: (visible: boolean) => void;
     viewMode: 'calendar' | 'list';
+    onEventsChange?: (events: Event[]) => void;
   }) => {
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
@@ -127,6 +128,7 @@ if (container) {
         const month = date.month() + 1; // dayjs months are 0-indexed
         const data = await api.getEventsByMonth(year, month);
         setEvents(data);
+        onEventsChange?.(data);
       } catch (err) {
         console.error('Failed to fetch events:', err);
         setError('加载演出数据失败，请稍后重试');
@@ -276,14 +278,13 @@ if (container) {
         // 根据type字段确定显示的时间标签
         const isAfternoon = item.type === 'afternoon';
         const timeLabel = isAfternoon ? '下午场' : '晚场';
-        const timeColor = isAfternoon ? '#faad14' : '#1890ff';
         
         return (
           <li key={index} className="item-troupe">
             <Flex gap="4px 0" wrap>
               {troupeRender(item.troupe)}
               {cityRender(item.city)}
-              <Tag color={timeColor} style={{ margin: 0 }}>{timeLabel}</Tag>
+              <span style={{ fontSize: '12px', color: '#666' }}>{timeLabel}</span>
               {locationRender(item.location)}
             </Flex>
             <span className="item-content item-play-name">{content}</span>
@@ -322,9 +323,7 @@ if (container) {
 
     return (
       <div className="calendar-wrapper">
-        <div style={{ marginBottom: 16, padding: '0 16px' }}>
-          <ExportImage events={events} currentDate={currentDate} />
-        </div>
+        <ExportImage events={events} currentDate={currentDate} />
         {error && (
           <Alert
             message="错误"
@@ -338,27 +337,27 @@ if (container) {
         )}
         <Spin spinning={loading} tip="加载中...">
           {viewMode === 'calendar' ? (
-            <CustomCalendar 
-              cellRender={(date) => dateCellRender(date)} 
-              value={currentDate} 
-              onChange={onDateChange}
-              onCellClick={handleCellClick}
-            />
-          ) : (
-            <MobileCardView 
-              currentDate={currentDate}
-              events={events}
-              onEventClick={(event) => {
-                setSelectedEvents([event]);
-                setSelectedDate(dayjs(event.date));
-                setModalVisible(true);
-              }}
-              onAddEvent={(date) => {
-                setEditingDate(dayjs(date));
-                setEditModalVisible(true);
-              }}
-            />
-          )}
+              <CustomCalendar 
+                cellRender={(date) => dateCellRender(date)} 
+                value={currentDate} 
+                onChange={onDateChange}
+                onCellClick={handleCellClick}
+              />
+            ) : (
+              <MobileCardView 
+                currentDate={currentDate}
+                events={events}
+                onEventClick={(event) => {
+                  setSelectedEvents([event]);
+                  setSelectedDate(dayjs(event.date));
+                  setModalVisible(true);
+                }}
+                onAddEvent={(date) => {
+                  setEditingDate(dayjs(date));
+                  setEditModalVisible(true);
+                }}
+              />
+            )}
         </Spin>
         
         <Modal
