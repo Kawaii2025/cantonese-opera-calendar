@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Calendar, ConfigProvider, Flex, Tag } from 'antd';
+import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import { usePageScroll } from './hooks/usePageScroll';
@@ -100,10 +100,48 @@ if (container) {
     const [currentDate, setCurrentDate] = useState(dayjs(defaultDate));
     usePageScroll(currentDate, setCurrentDate);
     
+    const year = currentDate.year();
+    const month = currentDate.month();
+    
+    const yearOptions = Array.from({ length: 10 }, (_, i) => ({
+      label: `${year - 5 + i}年`,
+      value: year - 5 + i,
+    }));
+    
+    const monthOptions = Array.from({ length: 12 }, (_, i) => ({
+      label: dayjs().month(i).format('MMM'),
+      value: i,
+    }));
+    
     return (
-      <div style={{ padding: 24 }}>
-        <CalendarApp currentDate={currentDate} onDateChange={setCurrentDate} />
-      </div>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Layout.Header className="app-header">
+          <div className="header-content">
+            <h1 className="header-title">2025年粤剧春班日历</h1>
+            <div className="header-date-controls">
+              <Select
+                value={year}
+                options={yearOptions}
+                onChange={(newYear) => setCurrentDate(currentDate.year(newYear))}
+                style={{ width: 100 }}
+              />
+              <Select
+                value={month}
+                options={monthOptions}
+                onChange={(newMonth) => setCurrentDate(currentDate.month(newMonth))}
+                style={{ width: 80 }}
+              />
+              <Radio.Group value="month" buttonStyle="solid">
+                <Radio.Button value="month">月</Radio.Button>
+                <Radio.Button value="year">年</Radio.Button>
+              </Radio.Group>
+            </div>
+          </div>
+        </Layout.Header>
+        <Layout.Content style={{ paddingTop: 0 }}>
+          <CalendarApp currentDate={currentDate} onDateChange={setCurrentDate} />
+        </Layout.Content>
+      </Layout>
     );
   };
   
@@ -177,13 +215,14 @@ if (container) {
     };
 
     return (
-      <div style={{ position: 'relative' }}>
-        <div className="ant-picker-calendar-header-wrapper">
-          <Calendar cellRender={() => null} value={currentDate} onChange={onDateChange} fullscreen={true} />
-        </div>
-        <div className="ant-picker-calendar-content-wrapper">
-          <Calendar cellRender={cellRender} value={currentDate} onChange={onDateChange} classNames={{ content: 'calendar-content-sticky' }} fullscreen={true} />
-        </div>
+      <div className="calendar-wrapper">
+        <Calendar 
+          cellRender={cellRender} 
+          value={currentDate} 
+          onChange={onDateChange} 
+          fullscreen={true}
+          headerRender={() => null}
+        />
       </div>
     );
   };
