@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "node --watch server.js",
     "start": "node server.js",
+    "build": "echo 'Build completed!'",
     "migrate": "node migrate.js",
     "seed": "node seed.js",
     "test-connection": "node test-connection.js",
