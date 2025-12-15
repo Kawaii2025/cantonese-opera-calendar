@@ -1,8 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import dayjs from 'dayjs';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { Event } from '../api';
 import { cityColors, troupeColors } from '../constants/colors';
 import '../styles/mobile-card-view.css';
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
 
 interface MobileCardViewProps {
   currentDate: dayjs.Dayjs;
@@ -17,13 +22,45 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
   onEventClick,
   onAddEvent
 }) => {
+  const [selectedTroupe, setSelectedTroupe] = useState<string | null>(null);
+  const [startDay, setStartDay] = useState<number | null>(null);
+  const [endDay, setEndDay] = useState<number | null>(null);
+  
   const year = currentDate.year();
   const month = currentDate.month() + 1;
+  const daysInMonth = dayjs(`${year}-${month}-01`).daysInMonth();
+
+  // 获取所有剧团列表
+  const troupeList = useMemo(() => {
+    const troupes = new Set(events.map(e => e.troupe));
+    return Array.from(troupes).sort();
+  }, [events]);
+
+  // 根据筛选条件过滤演出
+  const filteredEvents = useMemo(() => {
+    let filtered = events;
+    
+    if (selectedTroupe) {
+      filtered = filtered.filter(event => event.troupe === selectedTroupe);
+    }
+    
+    if (startDay !== null) {
+      const startDate = dayjs(`${year}-${month}-${startDay}`);
+      filtered = filtered.filter(event => dayjs(event.date).isSameOrAfter(startDate, 'day'));
+    }
+    
+    if (endDay !== null) {
+      const endDate = dayjs(`${year}-${month}-${endDay}`);
+      filtered = filtered.filter(event => dayjs(event.date).isSameOrBefore(endDate, 'day'));
+    }
+    
+    return filtered;
+  }, [events, selectedTroupe, startDay, endDay, year, month]);
 
   // 按日期分组演出
   const eventsByDate = useMemo(() => {
     const map = new Map<string, Event[]>();
-    events.forEach(event => {
+    filteredEvents.forEach(event => {
       const dateKey = dayjs(event.date).format('YYYY-MM-DD');
       if (!map.has(dateKey)) {
         map.set(dateKey, []);
@@ -31,10 +68,9 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
       map.get(dateKey)!.push(event);
     });
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   // 获取该月所有日期
-  const daysInMonth = dayjs(`${year}-${month}-01`).daysInMonth();
   const dates = Array.from({ length: daysInMonth }, (_, i) => 
     dayjs(`${year}-${month}-${i + 1}`)
   );
@@ -43,6 +79,76 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
     <div className="mobile-card-view">
       <div className="month-header">
         <h2>{year}年{month}月</h2>
+      </div>
+
+      <div className="troupe-filter">
+        <button
+          className={`filter-button ${!selectedTroupe ? 'active' : ''}`}
+          onClick={() => setSelectedTroupe(null)}
+        >
+          全部
+        </button>
+        {troupeList.map((troupe) => {
+          const troupeColor = troupeColors[troupe] || '#262626';
+          return (
+            <button
+              key={troupe}
+              className={`filter-button ${selectedTroupe === troupe ? 'active' : ''}`}
+              onClick={() => setSelectedTroupe(troupe)}
+              style={
+                selectedTroupe === troupe
+                  ? { backgroundColor: troupeColor, color: 'white', borderColor: troupeColor }
+                  : { borderColor: troupeColor, color: troupeColor }
+              }
+            >
+              {troupe}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="date-range-filter">
+        <div className="date-select-group">
+          <label htmlFor="start-day">从</label>
+          <select
+            id="start-day"
+            value={startDay === null ? '' : startDay}
+            onChange={(e) => setStartDay(e.target.value ? parseInt(e.target.value) : null)}
+          >
+            <option value="">全部</option>
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => (
+              <option key={day} value={day}>
+                {day}日
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="date-select-group">
+          <label htmlFor="end-day">至</label>
+          <select
+            id="end-day"
+            value={endDay === null ? '' : endDay}
+            onChange={(e) => setEndDay(e.target.value ? parseInt(e.target.value) : null)}
+          >
+            <option value="">全部</option>
+            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => (
+              <option key={day} value={day}>
+                {day}日
+              </option>
+            ))}
+          </select>
+        </div>
+        {(startDay !== null || endDay !== null) && (
+          <button
+            className="clear-date-button"
+            onClick={() => {
+              setStartDay(null);
+              setEndDay(null);
+            }}
+          >
+            清除
+          </button>
+        )}
       </div>
 
       <div className="events-list">

@@ -31,6 +31,15 @@ export const ExportImage: React.FC<ExportImageProps> = ({ events, currentDate })
       setLoading(true);
       const html2canvas = (await import('html2canvas')).default;
 
+      // 临时隐藏筛选区域
+      const troupeFilter = contentDiv.querySelector('.troupe-filter') as HTMLElement;
+      const dateRangeFilter = contentDiv.querySelector('.date-range-filter') as HTMLElement;
+      const originalTroupeDisplay = troupeFilter?.style.display;
+      const originalDateDisplay = dateRangeFilter?.style.display;
+
+      if (troupeFilter) troupeFilter.style.display = 'none';
+      if (dateRangeFilter) dateRangeFilter.style.display = 'none';
+
       // 导出当前显示的内容
       const canvas = await html2canvas(contentDiv as HTMLElement, {
         backgroundColor: '#ffffff',
@@ -39,6 +48,10 @@ export const ExportImage: React.FC<ExportImageProps> = ({ events, currentDate })
         allowTaint: true,
         useCORS: true,
       });
+
+      // 恢复筛选区域显示
+      if (troupeFilter) troupeFilter.style.display = originalTroupeDisplay || '';
+      if (dateRangeFilter) dateRangeFilter.style.display = originalDateDisplay || '';
 
       // 下载图片
       const link = document.createElement('a');

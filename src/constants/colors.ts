@@ -9,6 +9,7 @@ export const cityColors: Record<string, string> = {
   香港: '#722ed1',
   北海: '#13c2c2',
   珠海: '#40b0ff',
+  吴川: '#eb2f96',
 };
 
 // 剧团颜色映射
