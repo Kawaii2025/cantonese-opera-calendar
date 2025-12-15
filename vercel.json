@@ -1,7 +1,11 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "echo 'Backend deployment'",
   "devCommand": "npm run dev",
   "installCommand": "npm install",
-  "framework": "vite",
-  "outputDirectory": "./dist"
+  "framework": "other",
+  "git": {
+    "deploymentEnabled": {
+      "backend": true
+    }
+  }
 }
