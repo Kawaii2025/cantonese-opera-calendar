@@ -5,12 +5,14 @@ import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import { CustomCalendar } from './components/CustomCalendar';
 import { MobileCardView } from './components/MobileCardView';
+import { ExportImage } from './components/ExportImage';
 import { usePageScroll } from './hooks/usePageScroll';
 import { api, Event } from './api';
 import './style.css';
 import './styles/custom-calendar.css';
 import './styles/mobile.css';
 import './styles/mobile-card-view.css';
+import './styles/export-image.css';
 
 const defaultDate = dayjs(); // 默认打开当前月份
 let filter = (data: any[]) => data;
@@ -320,6 +322,9 @@ if (container) {
 
     return (
       <div className="calendar-wrapper">
+        <div style={{ marginBottom: 16, padding: '0 16px' }}>
+          <ExportImage events={events} currentDate={currentDate} />
+        </div>
         {error && (
           <Alert
             message="错误"

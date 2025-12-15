@@ -1,12 +1,18 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message } from 'antd';
+import { ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
-import { usePageScroll } from './hooks/usePageScroll';
+import { CustomCalendar } from './components/CustomCalendar';
+import { MobileCardView } from './components/MobileCardView';
+import { ExportImage } from './components/ExportImage';
 import { api } from './api';
 import './style.css';
+import './styles/custom-calendar.css';
+import './styles/mobile.css';
+import './styles/mobile-card-view.css';
+import './styles/export-image.css';
 const defaultDate = dayjs(); // 默认打开当前月份
 let filter = (data) => data;
 const getMonthData = (value) => {
@@ -20,7 +26,9 @@ if (container) {
     const RootApp = () => {
         const [currentDate, setCurrentDate] = useState(defaultDate);
         const [modalVisible, setModalVisible] = useState(false);
-        usePageScroll(currentDate, setCurrentDate, modalVisible);
+        const [viewMode, setViewMode] = useState('calendar');
+        // 暂时禁用滚动翻页功能
+        // usePageScroll(currentDate, setCurrentDate, modalVisible);
         const year = currentDate.year();
         const month = currentDate.month();
         const yearOptions = Array.from({ length: 10 }, (_, i) => ({
@@ -31,9 +39,9 @@ if (container) {
             label: dayjs().month(i).format('MMM'),
             value: i,
         }));
-        return (_jsxs(Layout, { style: { minHeight: '100vh' }, children: [_jsx(Layout.Header, { className: "app-header", children: _jsxs("div", { className: "header-content", children: [_jsx("h1", { className: "header-title", children: "2025\u5E74\u7CA4\u5267\u6625\u73ED\u65E5\u5386" }), _jsxs("div", { className: "header-date-controls", children: [_jsx(Select, { value: year, options: yearOptions, onChange: (newYear) => setCurrentDate(currentDate.year(newYear)), style: { width: 100 } }), _jsx(Select, { value: month, options: monthOptions, onChange: (newMonth) => setCurrentDate(currentDate.month(newMonth)), style: { width: 80 } }), _jsxs(Radio.Group, { value: "month", buttonStyle: "solid", children: [_jsx(Radio.Button, { value: "month", children: "\u6708" }), _jsx(Radio.Button, { value: "year", children: "\u5E74" })] })] })] }) }), _jsx(Layout.Content, { style: { paddingTop: 0 }, children: _jsx(CalendarApp, { currentDate: currentDate, onDateChange: setCurrentDate, modalVisible: modalVisible, setModalVisible: setModalVisible }) })] }));
+        return (_jsxs(Layout, { style: { minHeight: '100vh' }, children: [_jsx(Layout.Header, { className: "app-header", children: _jsxs("div", { className: "header-content", children: [_jsx("h1", { className: "header-title", children: "2025\u5E74\u7CA4\u5267\u6625\u73ED\u65E5\u5386" }), _jsxs("div", { className: "header-date-controls", children: [_jsx(Select, { value: year, options: yearOptions, onChange: (newYear) => setCurrentDate(currentDate.year(newYear)), style: { width: 100 } }), _jsx(Select, { value: month, options: monthOptions, onChange: (newMonth) => setCurrentDate(currentDate.month(newMonth)), style: { width: 80 } }), _jsxs(Radio.Group, { value: "month", buttonStyle: "solid", children: [_jsx(Radio.Button, { value: "month", children: "\u6708" }), _jsx(Radio.Button, { value: "year", children: "\u5E74" })] }), _jsxs(Radio.Group, { value: viewMode, onChange: (e) => setViewMode(e.target.value), buttonStyle: "solid", children: [_jsx(Radio.Button, { value: "calendar", children: "\u65E5\u5386" }), _jsx(Radio.Button, { value: "list", children: "\u5217\u8868" })] })] })] }) }), _jsx(Layout.Content, { style: { paddingTop: 0 }, children: _jsx(CalendarApp, { currentDate: currentDate, onDateChange: setCurrentDate, modalVisible: modalVisible, setModalVisible: setModalVisible, viewMode: viewMode }) })] }));
     };
-    const CalendarApp = ({ currentDate, onDateChange, modalVisible, setModalVisible }) => {
+    const CalendarApp = ({ currentDate, onDateChange, modalVisible, setModalVisible, viewMode }) => {
         const [selectedDate, setSelectedDate] = useState(null);
         const [selectedEvents, setSelectedEvents] = useState([]);
         const [events, setEvents] = useState([]);
@@ -111,6 +119,35 @@ if (container) {
             const num = getMonthData(value);
             return num ? (_jsxs("div", { className: "notes-month", children: [_jsxs("section", { children: [num, " "] }), _jsx("span", { children: " Backlog number " })] })) : null;
         };
+        const handleCellClick = useCallback((value) => {
+            const dateKey = value.format('YYYY-MM-DD');
+            const listData = eventsByDate.get(dateKey) || [];
+            const now = Date.now();
+            const last = lastClickRef.current;
+            // 检测双击 (300ms 内两次点击)
+            if (last && last.date === dateKey && now - last.time < 300) {
+                // 双击 - 进入编辑模式
+                setSelectedDate(value);
+                setEditingDate(value);
+                setEditModalVisible(true);
+                lastClickRef.current = null;
+            }
+            else {
+                // 单击 - 记录点击信息，等待可能的第二次点击
+                lastClickRef.current = { date: dateKey, time: now };
+                // 延迟300ms后，如果没有第二次点击则显示详情
+                setTimeout(() => {
+                    // 检查是否已经触发了双击
+                    if (lastClickRef.current && lastClickRef.current.date === dateKey && lastClickRef.current.time === now) {
+                        if (listData.length > 0) {
+                            setSelectedDate(value);
+                            setSelectedEvents(listData);
+                            setModalVisible(true);
+                        }
+                    }
+                }, 300);
+            }
+        }, [eventsByDate]);
         const cityRender = (city) => {
             const map = {
                 广州: 'red',
@@ -146,41 +183,24 @@ if (container) {
         const dateCellRender = (value) => {
             const dateKey = value.format('YYYY-MM-DD');
             const listData = eventsByDate.get(dateKey) || [];
-            const displayData = listData.slice(0, 3);
-            const remainingCount = listData.length - 3;
-            const handleCellClick = (e) => {
-                const now = Date.now();
-                const last = lastClickRef.current;
-                // 检测双击 (300ms 内两次点击)
-                if (last && last.date === dateKey && now - last.time < 300) {
-                    // 双击
-                    setSelectedDate(value);
-                    setEditingDate(value);
-                    setEditModalVisible(true);
-                    lastClickRef.current = null;
-                }
-                else {
-                    // 单击
-                    lastClickRef.current = { date: dateKey, time: now };
-                    if (listData.length > 0) {
-                        setSelectedDate(value);
-                        setSelectedEvents(listData);
-                        setModalVisible(true);
-                    }
-                }
-            };
+            const displayData = listData.slice(0, 2);
+            const remainingCount = listData.length - 2;
             const renderItem = (item, index) => {
                 // 如果剧目没有书名号，则添加
                 const content = item.content.startsWith('《') && item.content.endsWith('》')
                     ? item.content
                     : `《${item.content}》`;
-                return (_jsxs("li", { className: "item-troupe", children: [_jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), locationRender(item.location)] }), _jsx("span", { className: "item-content item-play-name", children: content })] }, index));
+                // 根据type字段确定显示的时间标签
+                const isAfternoon = item.type === 'afternoon';
+                const timeLabel = isAfternoon ? '下午场' : '晚场';
+                const timeColor = isAfternoon ? '#faad14' : '#1890ff';
+                return (_jsxs("li", { className: "item-troupe", children: [_jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), _jsx(Tag, { color: timeColor, style: { margin: 0 }, children: timeLabel }), locationRender(item.location)] }), _jsx("span", { className: "item-content item-play-name", children: content })] }, index));
             };
-            return (_jsx("div", { onClick: handleCellClick, className: "date-cell-content", style: {
+            return (_jsx("div", { className: "date-cell-content", style: {
                     cursor: 'pointer',
                     userSelect: 'none',
-                    minHeight: '60px',
-                    padding: '4px'
+                    minHeight: '0px',
+                    padding: '2px'
                 }, title: "\u5355\u51FB\u67E5\u770B\u8BE6\u60C5\uFF0C\u53CC\u51FB\u6DFB\u52A0\u6F14\u51FA", children: _jsxs("ul", { className: "events", children: [displayData.map((item, index) => renderItem(item, index)), remainingCount > 0 && (_jsxs("li", { className: "more-events", children: ["\u8FD8\u6709 ", remainingCount, " \u573A..."] }))] }) }));
         };
         const cellRender = (current, info) => {
@@ -190,7 +210,14 @@ if (container) {
                 return monthCellRender(current);
             return info.originNode;
         };
-        return (_jsxs("div", { className: "calendar-wrapper", children: [error && (_jsx(Alert, { message: "\u9519\u8BEF", description: error, type: "error", showIcon: true, closable: true, onClose: () => setError(null), style: { marginBottom: 16 } })), _jsx(Spin, { spinning: loading, tip: "\u52A0\u8F7D\u4E2D...", children: _jsx(Calendar, { cellRender: cellRender, value: currentDate, onChange: onDateChange, fullscreen: true, headerRender: () => null }) }), _jsx(Modal, { title: selectedDate ? `${selectedDate.format('YYYY年MM月DD日')} 演出安排` : '演出安排', open: modalVisible, onCancel: () => setModalVisible(false), footer: null, width: 700, className: "event-modal", children: _jsx("div", { className: "modal-events-list", children: selectedEvents.map((item, index) => {
+        return (_jsxs("div", { className: "calendar-wrapper", children: [_jsx("div", { style: { marginBottom: 16, padding: '0 16px' }, children: _jsx(ExportImage, { events: events, currentDate: currentDate }) }), error && (_jsx(Alert, { message: "\u9519\u8BEF", description: error, type: "error", showIcon: true, closable: true, onClose: () => setError(null), style: { marginBottom: 16 } })), _jsx(Spin, { spinning: loading, tip: "\u52A0\u8F7D\u4E2D...", children: viewMode === 'calendar' ? (_jsx(CustomCalendar, { cellRender: (date) => dateCellRender(date), value: currentDate, onChange: onDateChange, onCellClick: handleCellClick })) : (_jsx(MobileCardView, { currentDate: currentDate, events: events, onEventClick: (event) => {
+                            setSelectedEvents([event]);
+                            setSelectedDate(dayjs(event.date));
+                            setModalVisible(true);
+                        }, onAddEvent: (date) => {
+                            setEditingDate(dayjs(date));
+                            setEditModalVisible(true);
+                        } })) }), _jsx(Modal, { title: selectedDate ? `${selectedDate.format('YYYY年MM月DD日')} 演出安排` : '演出安排', open: modalVisible, onCancel: () => setModalVisible(false), footer: null, width: 700, className: "event-modal", children: _jsx("div", { className: "modal-events-list", children: selectedEvents.map((item, index) => {
                             const content = item.content.startsWith('《') && item.content.endsWith('》')
                                 ? item.content
                                 : `《${item.content}》`;
