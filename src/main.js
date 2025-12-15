@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import { usePageScroll } from './hooks/usePageScroll';
 import { api } from './api';
 import './style.css';
-const defaultDate = new Date(2025, 2, 1);
+const defaultDate = dayjs(); // 默认打开当前月份
 let filter = (data) => data;
 const getMonthData = (value) => {
     if (value.month() === 8) {
@@ -18,7 +18,7 @@ const container = document.getElementById('root');
 if (container) {
     const root = createRoot(container);
     const RootApp = () => {
-        const [currentDate, setCurrentDate] = useState(dayjs(defaultDate));
+        const [currentDate, setCurrentDate] = useState(defaultDate);
         const [modalVisible, setModalVisible] = useState(false);
         usePageScroll(currentDate, setCurrentDate, modalVisible);
         const year = currentDate.year();
@@ -121,6 +121,7 @@ if (container) {
                 湛江: 'green',
                 香港: 'purple',
                 北海: 'cyan',
+                珠海: 'blue',
             };
             const color = map[city] || '';
             return _jsxs(Tag, { color: color, children: [" ", city || ''] });
@@ -133,13 +134,14 @@ if (container) {
                 省一团: { color: '#faad14', name: '省一团' },
                 省二团: { color: '#a0d911', name: '省二团' },
                 深圳团: { color: '#eb2f96', name: '深圳团' },
+                珠海团: { color: '#ffc53d', name: '珠海团' },
                 省院: { color: '#fa541c', name: '省院' },
             };
             const { color, name } = map[troupe] || { color: '', name: '' };
             return _jsxs(Tag, { color: color, children: [" ", name || ''] });
         };
         const locationRender = (location) => {
-            return _jsxs(Tag, { color: "blue", children: [" ", location || ''] });
+            return _jsxs(Tag, { color: "red", children: [" ", location || ''] });
         };
         const dateCellRender = (value) => {
             const dateKey = value.format('YYYY-MM-DD');
@@ -167,7 +169,13 @@ if (container) {
                     }
                 }
             };
-            const renderItem = (item, index) => (_jsxs("li", { className: "item-troupe", children: [_jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), locationRender(item.location)] }), _jsx("span", { className: "item-content item-play-name", children: item.content })] }, index));
+            const renderItem = (item, index) => {
+                // 如果剧目没有书名号，则添加
+                const content = item.content.startsWith('《') && item.content.endsWith('》')
+                    ? item.content
+                    : `《${item.content}》`;
+                return (_jsxs("li", { className: "item-troupe", children: [_jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), locationRender(item.location)] }), _jsx("span", { className: "item-content item-play-name", children: content })] }, index));
+            };
             return (_jsx("div", { onClick: handleCellClick, className: "date-cell-content", style: {
                     cursor: 'pointer',
                     userSelect: 'none',
@@ -182,7 +190,12 @@ if (container) {
                 return monthCellRender(current);
             return info.originNode;
         };
-        return (_jsxs("div", { className: "calendar-wrapper", children: [error && (_jsx(Alert, { message: "\u9519\u8BEF", description: error, type: "error", showIcon: true, closable: true, onClose: () => setError(null), style: { marginBottom: 16 } })), _jsx(Spin, { spinning: loading, tip: "\u52A0\u8F7D\u4E2D...", children: _jsx(Calendar, { cellRender: cellRender, value: currentDate, onChange: onDateChange, fullscreen: true, headerRender: () => null }) }), _jsx(Modal, { title: selectedDate ? `${selectedDate.format('YYYY年MM月DD日')} 演出安排` : '演出安排', open: modalVisible, onCancel: () => setModalVisible(false), footer: null, width: 700, className: "event-modal", children: _jsx("div", { className: "modal-events-list", children: selectedEvents.map((item, index) => (_jsxs("div", { className: "modal-event-item", children: [_jsx("div", { className: "modal-event-header", children: _jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), locationRender(item.location)] }) }), _jsx("div", { className: "modal-event-content", children: _jsx("strong", { children: item.content }) }), item.type && (_jsx("div", { className: "modal-event-time", children: item.type === 'afternoon' ? '下午场' : '晚场' }))] }, index))) }) }), _jsx(Modal, { title: editingDate ? `添加演出 - ${editingDate.format('YYYY年MM月DD日')}` : '添加演出', open: editModalVisible, onCancel: () => {
+        return (_jsxs("div", { className: "calendar-wrapper", children: [error && (_jsx(Alert, { message: "\u9519\u8BEF", description: error, type: "error", showIcon: true, closable: true, onClose: () => setError(null), style: { marginBottom: 16 } })), _jsx(Spin, { spinning: loading, tip: "\u52A0\u8F7D\u4E2D...", children: _jsx(Calendar, { cellRender: cellRender, value: currentDate, onChange: onDateChange, fullscreen: true, headerRender: () => null }) }), _jsx(Modal, { title: selectedDate ? `${selectedDate.format('YYYY年MM月DD日')} 演出安排` : '演出安排', open: modalVisible, onCancel: () => setModalVisible(false), footer: null, width: 700, className: "event-modal", children: _jsx("div", { className: "modal-events-list", children: selectedEvents.map((item, index) => {
+                            const content = item.content.startsWith('《') && item.content.endsWith('》')
+                                ? item.content
+                                : `《${item.content}》`;
+                            return (_jsxs("div", { className: "modal-event-item", children: [_jsx("div", { className: "modal-event-header", children: _jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), locationRender(item.location)] }) }), _jsx("div", { className: "modal-event-content", children: _jsx("strong", { children: content }) }), item.type && (_jsx("div", { className: "modal-event-time", children: item.type === 'afternoon' ? '下午场' : '晚场' }))] }, index));
+                        }) }) }), _jsx(Modal, { title: editingDate ? `添加演出 - ${editingDate.format('YYYY年MM月DD日')}` : '添加演出', open: editModalVisible, onCancel: () => {
                         setEditModalVisible(false);
                         editForm.resetFields();
                     }, footer: [

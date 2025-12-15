@@ -29,7 +29,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// 公用选择列（3NF 联表，返回名字而非 id）
+// 公用选择列（ 3NF 联表，返回名字而非 id）
 const eventSelect = `
   SELECT 
     e.id,

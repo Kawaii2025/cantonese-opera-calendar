@@ -84,7 +84,7 @@ async function setupAndSeed() {
     `);
     console.log('✅ 3NF 表结构已创建\n');
     
-    // 4. 插入数据 - 异步分片插入
+    // 插入数据 - 异步分片插入
     console.log('📝 插入演出数据...');
     const insertSQL = 'INSERT INTO events (date, type_id, troupe_id, city_id, location_id, content) VALUES ($1, $2, $3, $4, $5, $6)';
     

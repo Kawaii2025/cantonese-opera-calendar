@@ -3,11 +3,21 @@ import { createRoot } from 'react-dom/client';
 import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
+import weekday from 'dayjs/plugin/weekday';
 import { usePageScroll } from './hooks/usePageScroll';
 import { api, Event } from './api';
 import './style.css';
 
-const defaultDate = new Date(2025, 2, 1);
+// 配置dayjs周一开始
+dayjs.extend(weekday);
+
+// 修改locale使周一开始  
+const customLocale = {
+  ...zhCN,
+  week: ['日', '一', '二', '三', '四', '五', '六']
+};
+
+const defaultDate = dayjs(); // 默认打开当前月份
 let filter = (data: any[]) => data;
 
 const getMonthData = (value: dayjs.Dayjs) => {
@@ -21,10 +31,11 @@ if (container) {
   const root = createRoot(container);
   
   const RootApp = () => {
-    const [currentDate, setCurrentDate] = useState(dayjs(defaultDate));
+    const [currentDate, setCurrentDate] = useState(defaultDate);
     const [modalVisible, setModalVisible] = useState(false);
     
-    usePageScroll(currentDate, setCurrentDate, modalVisible);
+    // 暂时禁用滚动翻页功能
+    // usePageScroll(currentDate, setCurrentDate, modalVisible);
     
     const year = currentDate.year();
     const month = currentDate.month();
@@ -184,6 +195,7 @@ if (container) {
         湛江: 'green',
         香港: 'purple',
         北海: 'cyan',
+        珠海: 'blue',
       };
 
       const color = map[city] || '';
@@ -198,6 +210,7 @@ if (container) {
         省一团: { color: '#faad14', name: '省一团' },
         省二团: { color: '#a0d911', name: '省二团' },
         深圳团: { color: '#eb2f96', name: '深圳团' },
+        珠海团: { color: '#ffc53d', name: '珠海团' },
         省院: { color: '#fa541c', name: '省院' },
       };
       const { color, name } = map[troupe] || { color: '', name: '' };
@@ -205,14 +218,14 @@ if (container) {
     };
 
     const locationRender = (location: string) => {
-      return <Tag color="blue"> {location || ''}</Tag>;
+      return <Tag color="red"> {location || ''}</Tag>;
     };
 
     const dateCellRender = (value: dayjs.Dayjs) => {
       const dateKey = value.format('YYYY-MM-DD');
       const listData = eventsByDate.get(dateKey) || [];
-      const displayData = listData.slice(0, 3);
-      const remainingCount = listData.length - 3;
+      const displayData = listData.slice(0, 2);
+      const remainingCount = listData.length - 2;
       
       const handleCellClick = (e: React.MouseEvent) => {
         const now = Date.now();
@@ -220,32 +233,52 @@ if (container) {
         
         // 检测双击 (300ms 内两次点击)
         if (last && last.date === dateKey && now - last.time < 300) {
-          // 双击
+          // 双击 - 进入编辑模式
           setSelectedDate(value);
           setEditingDate(value);
           setEditModalVisible(true);
           lastClickRef.current = null;
         } else {
-          // 单击
+          // 单击 - 记录点击信息，等待可能的第二次点击
           lastClickRef.current = { date: dateKey, time: now };
-          if (listData.length > 0) {
-            setSelectedDate(value);
-            setSelectedEvents(listData);
-            setModalVisible(true);
-          }
+          
+          // 延迟300ms后，如果没有第二次点击则显示详情
+          setTimeout(() => {
+            // 检查是否已经触发了双击
+            if (lastClickRef.current && lastClickRef.current.date === dateKey && lastClickRef.current.time === now) {
+              if (listData.length > 0) {
+                setSelectedDate(value);
+                setSelectedEvents(listData);
+                setModalVisible(true);
+              }
+            }
+          }, 300);
         }
       };
       
-      const renderItem = (item: any, index: number) => (
-        <li key={index} className="item-troupe">
-          <Flex gap="4px 0" wrap>
-            {troupeRender(item.troupe)}
-            {cityRender(item.city)}
-            {locationRender(item.location)}
-          </Flex>
-          <span className="item-content item-play-name">{item.content}</span>
-        </li>
-      );
+      const renderItem = (item: any, index: number) => {
+        // 如果剧目没有书名号，则添加
+        const content = item.content.startsWith('《') && item.content.endsWith('》') 
+          ? item.content 
+          : `《${item.content}》`;
+        
+        // 根据type字段确定显示的时间标签
+        const isAfternoon = item.type === 'afternoon';
+        const timeLabel = isAfternoon ? '下午场' : '晚场';
+        const timeColor = isAfternoon ? '#faad14' : '#1890ff';
+        
+        return (
+          <li key={index} className="item-troupe">
+            <Flex gap="4px 0" wrap>
+              {troupeRender(item.troupe)}
+              {cityRender(item.city)}
+              <Tag color={timeColor} style={{ margin: 0 }}>{timeLabel}</Tag>
+              {locationRender(item.location)}
+            </Flex>
+            <span className="item-content item-play-name">{content}</span>
+          </li>
+        );
+      };
       
       return (
         <div 
@@ -254,8 +287,8 @@ if (container) {
           style={{ 
             cursor: 'pointer',
             userSelect: 'none',
-            minHeight: '60px',
-            padding: '4px'
+            minHeight: '0px',
+            padding: '2px'
           }}
           title="单击查看详情，双击添加演出"
         >
@@ -309,25 +342,31 @@ if (container) {
           className="event-modal"
         >
           <div className="modal-events-list">
-            {selectedEvents.map((item, index) => (
-              <div key={index} className="modal-event-item">
-                <div className="modal-event-header">
-                  <Flex gap="4px 0" wrap>
-                    {troupeRender(item.troupe)}
-                    {cityRender(item.city)}
-                    {locationRender(item.location)}
-                  </Flex>
-                </div>
-                <div className="modal-event-content">
-                  <strong>{item.content}</strong>
-                </div>
-                {item.type && (
-                  <div className="modal-event-time">
-                    {item.type === 'afternoon' ? '下午场' : '晚场'}
+            {selectedEvents.map((item, index) => {
+              const content = item.content.startsWith('《') && item.content.endsWith('》') 
+                ? item.content 
+                : `《${item.content}》`;
+              
+              return (
+                <div key={index} className="modal-event-item">
+                  <div className="modal-event-header">
+                    <Flex gap="4px 0" wrap>
+                      {troupeRender(item.troupe)}
+                      {cityRender(item.city)}
+                      {locationRender(item.location)}
+                    </Flex>
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="modal-event-content">
+                    <strong>{content}</strong>
+                  </div>
+                  {item.type && (
+                    <div className="modal-event-time">
+                      {item.type === 'afternoon' ? '下午场' : '晚场'}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Modal>
 
@@ -408,7 +447,7 @@ if (container) {
   };
   
   root.render(
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider locale={customLocale}>
       <RootApp />
     </ConfigProvider>
   );
