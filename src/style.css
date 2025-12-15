@@ -83,20 +83,61 @@ ul {
   color: #262626;
 }
 
-.ant-picker-body th {
+.calendar-content-sticky {
+  height: 280px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.calendar-content-sticky table {
+  width: 100%;
+}
+
+.calendar-content-sticky thead {
+  position: sticky;
+  top: 0;
+  background-color: #fafafa;
+  z-index: 100;
+}
+
+.calendar-content-sticky thead th {
+  position: relative;
   padding-inline-end: 0px !important;
   padding-left: 14px !important;
+  background-color: #fafafa !important;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.calendar-content-sticky tbody tr {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.ant-picker-calendar-header-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+  background: white;
+  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.ant-picker-calendar-header-wrapper .ant-picker-calendar-date-content {
+  display: none !important;
+}
+
+.ant-picker-calendar-content-wrapper {
+  margin-top: 60px;
+}
+
+.ant-picker-calendar.ant-picker-calendar-full .ant-picker-header {
+  display: none !important;
 }
 
 .ant-select-arrow {
   display: none !important;
-}
-
-.ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content {
-  height: 280px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  position: relative;
 }
 
 .ant-picker-calendar.ant-picker-calendar-full .ant-picker-content .ant-picker-calendar-date-content::-webkit-scrollbar {

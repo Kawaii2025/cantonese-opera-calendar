@@ -1,4 +1,5 @@
 import { jsxs as _jsxs, jsx as _jsx } from "react/jsx-runtime";
+import { useState, useRef, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 import { Calendar, ConfigProvider, Flex, Tag } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
@@ -13,6 +14,8 @@ const getMonthData = (value) => {
     }
 };
 const App = () => {
+    const [currentDate, setCurrentDate] = useState(dayjs(defaultDate));
+    const scrollTimeoutRef = useRef(null);
     const monthCellRender = (value) => {
         const num = getMonthData(value);
         return num ? (_jsxs("div", { className: "notes-month", children: [_jsxs("section", { children: [num, " "] }), _jsx("span", { children: " Backlog number " })] })) : null;
@@ -58,11 +61,85 @@ const App = () => {
             return monthCellRender(current);
         return info.originNode;
     };
-    return _jsx(Calendar, { cellRender: cellRender, defaultValue: dayjs(defaultDate) });
+    return _jsx(Calendar, { cellRender: cellRender, value: currentDate, onChange: setCurrentDate });
 };
 const container = document.getElementById('root');
 if (container) {
-    createRoot(container).render(_jsx(ConfigProvider, { locale: zhCN, children: _jsx("div", { style: { padding: 24 }, children: _jsx(App, {}) }) }));
+    const root = createRoot(container);
+    const RootApp = () => {
+        const [currentDate, setCurrentDate] = useState(dayjs(defaultDate));
+        const scrollTimeoutRef = useRef(null);
+        useEffect(() => {
+            const handleWheel = (e) => {
+                // Only handle wheel events that aren't inside calendar date content
+                const calendarContent = e.target.closest('.ant-picker-calendar-date-content');
+                if (calendarContent) {
+                    // If scrolling inside calendar, don't change months
+                    return;
+                }
+                if (scrollTimeoutRef.current)
+                    clearTimeout(scrollTimeoutRef.current);
+                scrollTimeoutRef.current = setTimeout(() => {
+                    const newDate = e.deltaY > 0
+                        ? currentDate.add(1, 'month')
+                        : currentDate.subtract(1, 'month');
+                    setCurrentDate(newDate);
+                }, 100);
+            };
+            window.addEventListener('wheel', handleWheel, { passive: true });
+            return () => window.removeEventListener('wheel', handleWheel);
+        }, [currentDate]);
+        return (_jsx("div", { style: { padding: 24 }, children: _jsx(CalendarApp, { currentDate: currentDate, onDateChange: setCurrentDate }) }));
+    };
+    const CalendarApp = ({ currentDate, onDateChange }) => {
+        const monthCellRender = (value) => {
+            const num = getMonthData(value);
+            return num ? (_jsxs("div", { className: "notes-month", children: [_jsxs("section", { children: [num, " "] }), _jsx("span", { children: " Backlog number " })] })) : null;
+        };
+        const cityRender = (city) => {
+            const map = {
+                广州: 'red',
+                佛山: 'orange',
+                深圳: 'magenta',
+                东莞: 'volcano',
+                茂名: 'gold',
+                湛江: 'green',
+                香港: 'purple',
+                北海: 'cyan',
+            };
+            const color = map[city] || '';
+            return _jsxs(Tag, { color: color, children: [" ", city || ''] });
+        };
+        const troupeRender = (troupe) => {
+            const map = {
+                广州团: { color: '#2f54eb', name: '广州团' },
+                佛山团: { color: '#f5222d', name: '佛山团' },
+                红豆团: { color: '#ff4d4f', name: '红豆团' },
+                省一团: { color: '#faad14', name: '省一团' },
+                省二团: { color: '#a0d911', name: '省二团' },
+                深圳团: { color: '#eb2f96', name: '深圳团' },
+                省院: { color: '#fa541c', name: '省院' },
+            };
+            const { color, name } = map[troupe] || { color: '', name: '' };
+            return _jsxs(Tag, { color: color, children: [" ", name || ''] });
+        };
+        const locationRender = (location) => {
+            return _jsxs(Tag, { color: "blue", children: [" ", location || ''] });
+        };
+        const dateCellRender = (value) => {
+            const listData = getListData(value);
+            return (_jsx("ul", { className: "events", children: listData.map((item, index) => (_jsxs("li", { className: "item-troupe", children: [_jsxs(Flex, { gap: "4px 0", wrap: true, children: [troupeRender(item.troupe), cityRender(item.city), locationRender(item.location)] }), _jsx("span", { className: "item-content item-play-name", children: item.content })] }, index))) }));
+        };
+        const cellRender = (current, info) => {
+            if (info.type === 'date')
+                return dateCellRender(current);
+            if (info.type === 'month')
+                return monthCellRender(current);
+            return info.originNode;
+        };
+        return _jsx(Calendar, { cellRender: cellRender, value: currentDate, onChange: onDateChange });
+    };
+    root.render(_jsx(ConfigProvider, { locale: zhCN, children: _jsx(RootApp, {}) }));
 }
 const getListData = (value) => {
     let listData = []; // Specify the type of listData
