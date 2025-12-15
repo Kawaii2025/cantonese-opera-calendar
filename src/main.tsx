@@ -10,88 +10,10 @@ import './style.css';
 const defaultDate = new Date(2025, 2, 1);
 let filter = (data: any[]) => data;
 
-// filter = (data) => data.filter((item) => ['广州团'].includes(item.troupe));
-
 const getMonthData = (value: dayjs.Dayjs) => {
   if (value.month() === 8) {
     return 1394;
   }
-};
-
-const App = () => {
-  const [currentDate, setCurrentDate] = useState(dayjs(defaultDate));
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const monthCellRender = (value: dayjs.Dayjs) => {
-    const num = getMonthData(value);
-    return num ? (
-      <div className="notes-month">
-        <section>{num} </section>
-        <span> Backlog number </span>
-      </div>
-    ) : null;
-  };
-
-  const cityRender = (city: string) => {
-    const map: Record<string, string> = {
-      广州: 'red',
-      佛山: 'orange',
-      深圳: 'magenta',
-      东莞: 'volcano',
-      茂名: 'gold',
-      湛江: 'green',
-      香港: 'purple',
-      北海: 'cyan',
-    };
-
-    const color = map[city] || '';
-    return <Tag color={color}> {city || ''}</Tag>;
-  };
-
-  const troupeRender = (troupe: string) => {
-    const map: Record<string, { color: string; name: string }> = {
-      广州团: { color: '#2f54eb', name: '广州团' },
-      佛山团: { color: '#f5222d', name: '佛山团' },
-      红豆团: { color: '#ff4d4f', name: '红豆团' },
-      省一团: { color: '#faad14', name: '省一团' },
-      省二团: { color: '#a0d911', name: '省二团' },
-      深圳团: { color: '#eb2f96', name: '深圳团' },
-      省院: { color: '#fa541c', name: '省院' },
-    };
-    const { color, name } = map[troupe] || { color: '', name: '' };
-    return <Tag color={color}> {name || ''}</Tag>;
-  };
-
-  const locationRender = (location: string) => {
-    return <Tag color="blue"> {location || ''}</Tag>;
-  };
-
-  const dateCellRender = (value: dayjs.Dayjs) => {
-    const dateKey = value.format('YYYY-MM-DD');
-    const listData = eventsByDate.get(dateKey) || [];
-    return (
-      <ul className="events">
-        {listData.map((item: Event, index: number) => (
-          <li key={index} className="item-troupe">
-            <Flex gap="4px 0" wrap>
-              {troupeRender(item.troupe)}
-              {cityRender(item.city)}
-              {locationRender(item.location)}
-            </Flex>
-            <span className="item-content item-play-name">{item.content}</span>
-          </li>
-        ))}
-      </ul>
-    );
-  };
-
-  const cellRender = (current: dayjs.Dayjs, info: any) => {
-    if (info.type === 'date') return dateCellRender(current);
-    if (info.type === 'month') return monthCellRender(current);
-    return info.originNode;
-  };
-
-  return <Calendar cellRender={cellRender} value={currentDate} onChange={setCurrentDate} />;
 };
 
 const container = document.getElementById('root');
