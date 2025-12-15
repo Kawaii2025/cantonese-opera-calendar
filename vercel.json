@@ -1,7 +1,7 @@
 {
-  "buildCommand": "cd backend && npm install",
-  "outputDirectory": "backend",
-  "installCommand": "cd backend && npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "env": {
     "NODE_ENV": "production"
   }
