@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert } from 'antd';
+import { Calendar, ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import { usePageScroll } from './hooks/usePageScroll';
@@ -92,6 +92,11 @@ if (container) {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [editingDate, setEditingDate] = useState<dayjs.Dayjs | null>(null);
+    const [editModalVisible, setEditModalVisible] = useState(false);
+    const [editForm] = Form.useForm();
+    const [submitting, setSubmitting] = useState(false);
+    const lastClickRef = useRef<{ date: string; time: number } | null>(null);
 
     // Fetch events for the current month
     const fetchMonthData = async (date: dayjs.Dayjs) => {
@@ -114,6 +119,37 @@ if (container) {
     useEffect(() => {
       fetchMonthData(currentDate);
     }, [currentDate.year(), currentDate.month()]);
+
+    const handleEditSubmit = async (values: any) => {
+      if (!editingDate) return;
+      
+      try {
+        setSubmitting(true);
+        const newEvent: Event = {
+          id: Math.random().toString(36).substr(2, 9),
+          date: editingDate.format('YYYY-MM-DD'),
+          troupe: values.troupe,
+          city: values.city,
+          location: values.location,
+          content: values.content,
+          type: values.type || 'evening',
+        };
+        
+        await api.createEvent(newEvent);
+        message.success('演出信息添加成功');
+        
+        // Refresh the month data
+        await fetchMonthData(currentDate);
+        
+        setEditModalVisible(false);
+        editForm.resetFields();
+      } catch (err) {
+        console.error('Failed to add event:', err);
+        message.error('添加演出信息失败，请重试');
+      } finally {
+        setSubmitting(false);
+      }
+    };
 
     // Build a map of events by date for quick lookup
     const eventsByDate = useMemo(() => {
@@ -178,11 +214,25 @@ if (container) {
       const displayData = listData.slice(0, 3);
       const remainingCount = listData.length - 3;
       
-      const handleCellClick = () => {
-        if (listData.length > 0) {
+      const handleCellClick = (e: React.MouseEvent) => {
+        const now = Date.now();
+        const last = lastClickRef.current;
+        
+        // 检测双击 (300ms 内两次点击)
+        if (last && last.date === dateKey && now - last.time < 300) {
+          // 双击
           setSelectedDate(value);
-          setSelectedEvents(listData);
-          setModalVisible(true);
+          setEditingDate(value);
+          setEditModalVisible(true);
+          lastClickRef.current = null;
+        } else {
+          // 单击
+          lastClickRef.current = { date: dateKey, time: now };
+          if (listData.length > 0) {
+            setSelectedDate(value);
+            setSelectedEvents(listData);
+            setModalVisible(true);
+          }
         }
       };
       
@@ -198,7 +248,17 @@ if (container) {
       );
       
       return (
-        <div onClick={handleCellClick} className="date-cell-content">
+        <div 
+          onClick={handleCellClick}
+          className="date-cell-content"
+          style={{ 
+            cursor: 'pointer',
+            userSelect: 'none',
+            minHeight: '60px',
+            padding: '4px'
+          }}
+          title="单击查看详情，双击添加演出"
+        >
           <ul className="events">
             {displayData.map((item, index) => renderItem(item, index))}
             {remainingCount > 0 && (
@@ -269,6 +329,79 @@ if (container) {
               </div>
             ))}
           </div>
+        </Modal>
+
+        <Modal
+          title={editingDate ? `添加演出 - ${editingDate.format('YYYY年MM月DD日')}` : '添加演出'}
+          open={editModalVisible}
+          onCancel={() => {
+            setEditModalVisible(false);
+            editForm.resetFields();
+          }}
+          footer={[
+            <Button key="cancel" onClick={() => {
+              setEditModalVisible(false);
+              editForm.resetFields();
+            }}>
+              取消
+            </Button>,
+            <Button key="submit" type="primary" loading={submitting} onClick={() => editForm.submit()}>
+              添加演出
+            </Button>,
+          ]}
+          width={600}
+        >
+          <Form
+            form={editForm}
+            layout="vertical"
+            onFinish={handleEditSubmit}
+            style={{ marginTop: 24 }}
+          >
+            <Form.Item
+              label="剧团"
+              name="troupe"
+              rules={[{ required: true, message: '请输入剧团名称' }]}
+            >
+              <Input placeholder="例如：广州团" />
+            </Form.Item>
+
+            <Form.Item
+              label="演出剧目"
+              name="content"
+              rules={[{ required: true, message: '请输入演出剧目' }]}
+            >
+              <Input placeholder="例如：南海十三郎" />
+            </Form.Item>
+
+            <Form.Item
+              label="城市"
+              name="city"
+              rules={[{ required: true, message: '请输入城市' }]}
+            >
+              <Input placeholder="例如：广州" />
+            </Form.Item>
+
+            <Form.Item
+              label="场所"
+              name="location"
+              rules={[{ required: true, message: '请输入场所' }]}
+            >
+              <Input placeholder="例如：广州大剧院" />
+            </Form.Item>
+
+            <Form.Item
+              label="场次"
+              name="type"
+              initialValue="evening"
+            >
+              <Select
+                options={[
+                  { label: '下午场', value: 'afternoon' },
+                  { label: '晚场', value: 'evening' },
+                ]}
+              />
+            </Form.Item>
+          </Form>
         </Modal>
       </div>
     );

@@ -3,7 +3,7 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export interface Event {
-  id: number;
+  id?: string | number;
   date: string;
   type?: string;
   troupe: string;
@@ -49,7 +49,7 @@ export const api = {
   },
 
   // 添加演出
-  async createEvent(event: Omit<Event, 'id' | 'created_at'>): Promise<{ id: number; message: string }> {
+  async createEvent(event: Omit<Event, 'id' | 'created_at'>): Promise<{ id: string | number; message: string }> {
     const response = await fetch(`${API_BASE_URL}/api/events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,7 +60,7 @@ export const api = {
   },
 
   // 更新演出
-  async updateEvent(id: number, event: Omit<Event, 'id' | 'created_at'>): Promise<{ message: string }> {
+  async updateEvent(id: string | number, event: Omit<Event, 'id' | 'created_at'>): Promise<{ message: string }> {
     const response = await fetch(`${API_BASE_URL}/api/events/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -71,7 +71,7 @@ export const api = {
   },
 
   // 删除演出
-  async deleteEvent(id: number): Promise<{ message: string }> {
+  async deleteEvent(id: string | number): Promise<{ message: string }> {
     const response = await fetch(`${API_BASE_URL}/api/events/${id}`, {
       method: 'DELETE',
     });
