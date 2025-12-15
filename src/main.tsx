@@ -67,10 +67,11 @@ const App = () => {
   };
 
   const dateCellRender = (value: dayjs.Dayjs) => {
-    const listData = getListData(value);
+    const dateKey = value.format('YYYY-MM-DD');
+    const listData = eventsByDate.get(dateKey) || [];
     return (
       <ul className="events">
-        {listData.map((item, index) => (
+        {listData.map((item: Event, index: number) => (
           <li key={index} className="item-troupe">
             <Flex gap="4px 0" wrap>
               {troupeRender(item.troupe)}
