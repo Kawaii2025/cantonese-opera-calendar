@@ -69,7 +69,7 @@ if (container) {
     return (
       <Layout.Header className="app-header">
         <div className="header-content">
-          <h1 className="header-title">2025年粤剧春班日历</h1>
+          <h1 className="header-title">2026年粤剧日历</h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             {location.pathname === '/' && (
               <>
