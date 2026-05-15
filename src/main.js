@@ -15,7 +15,7 @@ import './styles/custom-calendar.css';
 import './styles/mobile.css';
 import './styles/mobile-card-view.css';
 import './styles/export-image.css';
-const defaultDate = dayjs('2025-01-01'); // Default to 2025 where the data is
+const defaultDate = dayjs(); // Default to current date
 let filter = (data) => data;
 const getMonthData = (value) => {
     if (value.month() === 8) {
@@ -51,7 +51,7 @@ if (container) {
                 label: _jsx(Link, { to: "/admin", children: "\u7BA1\u7406\u540E\u53F0" }),
             },
         ];
-        return (_jsx(Layout.Header, { className: "app-header", children: _jsxs("div", { className: "header-content", children: [_jsx("h1", { className: "header-title", children: "2025\u5E74\u7CA4\u5267\u6625\u73ED\u65E5\u5386" }), _jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: 16 }, children: [location.pathname === '/' && (_jsxs(_Fragment, { children: [_jsx(Select, { value: year, options: yearOptions, onChange: (newYear) => setCurrentDate(currentDate.year(newYear)), style: { width: 100 } }), _jsx(Select, { value: month, options: monthOptions, onChange: (newMonth) => setCurrentDate(currentDate.month(newMonth)), style: { width: 80 } })] })), _jsx(Menu, { mode: "horizontal", selectedKeys: [location.pathname], items: menuItems, style: { border: 'none', minWidth: 200 } })] })] }) }));
+        return (_jsx(Layout.Header, { className: "app-header", children: _jsxs("div", { className: "header-content", children: [_jsx("h1", { className: "header-title", children: "2026\u5E74\u7CA4\u5267\u65E5\u5386" }), _jsxs("div", { style: { display: 'flex', alignItems: 'center', gap: 16 }, children: [location.pathname === '/' && (_jsxs(_Fragment, { children: [_jsx(Select, { value: year, options: yearOptions, onChange: (newYear) => setCurrentDate(currentDate.year(newYear)), style: { width: 100 } }), _jsx(Select, { value: month, options: monthOptions, onChange: (newMonth) => setCurrentDate(currentDate.month(newMonth)), style: { width: 80 } })] })), _jsx(Menu, { mode: "horizontal", selectedKeys: [location.pathname], items: menuItems, style: { border: 'none', minWidth: 200 } })] })] }) }));
     };
     const RootApp = () => {
         const [currentDate, setCurrentDate] = useState(defaultDate);
