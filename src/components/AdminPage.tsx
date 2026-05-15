@@ -36,7 +36,6 @@ export const AdminPage = () => {
   const [troupes, setTroupes] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [sortOrder, setSortOrder] = useState<'descend' | 'ascend'>('descend');
 
   const fetchAllData = async () => {
     try {
@@ -46,6 +45,7 @@ export const AdminPage = () => {
         api.getTroupes(),
         api.getCities()
       ]);
+      // 直接使用后端返回的顺序（已经是倒序了）
       setEvents(eventsData);
       setTroupes(troupesData);
       setCities(citiesData);
@@ -127,8 +127,6 @@ export const AdminPage = () => {
             dataIndex: 'date',
             key: 'date',
             render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
-            sorter: (a: Event, b: Event) => dayjs(b.date).unix() - dayjs(a.date).unix(),
-            defaultSortOrder: 'descend' as const,
         },
     {
       title: '场次',
