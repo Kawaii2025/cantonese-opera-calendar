@@ -14,7 +14,7 @@ import './styles/mobile.css';
 import './styles/mobile-card-view.css';
 import './styles/export-image.css';
 
-const defaultDate = dayjs(); // 默认打开当前月份
+const defaultDate = dayjs('2025-01-01'); // Default to 2025 where the data is
 let filter = (data: any[]) => data;
 
 const getMonthData = (value: dayjs.Dayjs) => {

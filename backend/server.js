@@ -34,12 +34,14 @@ const eventSelect = `
   SELECT 
     e.id,
     e.date,
+    EXTRACT(EPOCH FROM e.date)::BIGINT AS date_timestamp,
     et.name AS type,
     t.name AS troupe,
     c.name AS city,
     l.name AS location,
     e.content,
-    e.created_at AT TIME ZONE 'Asia/Shanghai' AS created_at
+    e.created_at AT TIME ZONE 'Asia/Shanghai' AS created_at,
+    EXTRACT(EPOCH FROM e.created_at AT TIME ZONE 'Asia/Shanghai')::BIGINT AS created_at_timestamp
   FROM events e
   JOIN event_types et ON e.type_id = et.id
   JOIN troupes t ON e.troupe_id = t.id

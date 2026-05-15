@@ -5,12 +5,14 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 export interface Event {
   id?: string | number;
   date: string;
+  date_timestamp?: number;
   type?: string;
   troupe: string;
   city: string;
   location: string;
   content: string;
   created_at?: string;
+  created_at_timestamp?: number;
 }
 
 export const api = {
