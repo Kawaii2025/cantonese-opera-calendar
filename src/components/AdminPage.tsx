@@ -142,21 +142,21 @@ export const AdminPage = () => {
         { text: '下午场', value: 'afternoon' },
         { text: '晚场', value: 'evening' },
       ],
-      onFilter: (value: string, record: Event) => record.type === value,
+      onFilter: (value: any, record: Event) => record.type === value,
     },
     {
       title: '剧团',
       dataIndex: 'troupe',
       key: 'troupe',
       filters: [...new Set(events.map(e => e.troupe))].map(t => ({ text: t, value: t })),
-      onFilter: (value: string, record: Event) => record.troupe === value,
+      onFilter: (value: any, record: Event) => record.troupe === value,
     },
     {
       title: '城市',
       dataIndex: 'city',
       key: 'city',
       filters: [...new Set(events.map(e => e.city))].map(c => ({ text: c, value: c })),
-      onFilter: (value: string, record: Event) => record.city === value,
+      onFilter: (value: any, record: Event) => record.city === value,
     },
     {
       title: '场所',
@@ -203,7 +203,7 @@ export const AdminPage = () => {
         </Space>
       ),
     },
-  ];
+  ] as any;
 
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
