@@ -29,19 +29,31 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
+// Request logger middleware
+app.use((req, res, next) => {
+  console.log(`\n📥 [${new Date().toISOString()}] ${req.method} ${req.path}`);
+  if (Object.keys(req.params).length > 0) {
+    console.log(`   Params:`, req.params);
+  }
+  if (Object.keys(req.query).length > 0) {
+    console.log(`   Query:`, req.query);
+  }
+  next();
+});
+
 // 公用选择列（ 3NF 联表，返回名字而非 id）
 const eventSelect = `
   SELECT 
     e.id,
     e.date,
-    EXTRACT(EPOCH FROM e.date)::BIGINT AS date_timestamp,
+    EXTRACT(EPOCH FROM e.date)::INT AS date_timestamp,
     et.name AS type,
     t.name AS troupe,
     c.name AS city,
     l.name AS location,
     e.content,
     e.created_at AT TIME ZONE 'Asia/Shanghai' AS created_at,
-    EXTRACT(EPOCH FROM e.created_at AT TIME ZONE 'Asia/Shanghai')::BIGINT AS created_at_timestamp
+    EXTRACT(EPOCH FROM e.created_at AT TIME ZONE 'Asia/Shanghai')::INT AS created_at_timestamp
   FROM events e
   JOIN event_types et ON e.type_id = et.id
   JOIN troupes t ON e.troupe_id = t.id
@@ -126,6 +138,7 @@ app.get('/api/health', async (req, res) => {
 
 // 获取所有演出
 app.get('/api/events', async (req, res) => {
+  const endpoint = 'GET /api/events';
   try {
     const { startDate, endDate, troupe, city } = req.query;
     
@@ -160,32 +173,43 @@ app.get('/api/events', async (req, res) => {
     query += ' ORDER BY e.date ASC, et.name';
     
     const result = await pool.query(query, params);
+    console.log(`✅ ${endpoint} - Returned ${result.rows.length} events`);
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching events:', error);
-    res.status(500).json({ error: 'Failed to fetch events' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to fetch events', endpoint });
   }
 });
 
 // 根据日期获取演出
 app.get('/api/events/by-date/:date', async (req, res) => {
+  const endpoint = 'GET /api/events/by-date/:date';
   try {
     const { date } = req.params;
     const result = await pool.query(
       `${eventSelect} WHERE e.date = $1 ORDER BY et.name`,
       [date]
     );
+    console.log(`✅ ${endpoint} - Returned ${result.rows.length} events for date: ${date}`);
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching events by date:', error);
-    res.status(500).json({ error: 'Failed to fetch events' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to fetch events', endpoint });
   }
 });
 
 // 获取月份范围内的演出
-app.get('/api/events/by-month/:year/:month', async (req, res) => {
+app.get('/api/events/by-month/:yearMonth', async (req, res) => {
+  const endpoint = 'GET /api/events/by-month/:yearMonth';
   try {
-    const { year, month } = req.params;
+    const { yearMonth } = req.params;
+    const [year, month] = yearMonth.split('-');
+    
+    if (!year || !month) {
+      console.log(`⚠️ ${endpoint} - Invalid year-month format: ${yearMonth}, use YYYY-MM`);
+      return res.status(400).json({ error: 'Invalid year-month format, use YYYY-MM', endpoint });
+    }
+    
     const startDate = `${year}-${month.padStart(2, '0')}-01`;
     // Calculate the last day of the month
     const lastDay = new Date(year, month, 0).getDate();
@@ -195,20 +219,23 @@ app.get('/api/events/by-month/:year/:month', async (req, res) => {
       `${eventSelect} WHERE e.date >= $1 AND e.date <= $2 ORDER BY e.date, et.name`,
       [startDate, endDate]
     );
+    console.log(`✅ ${endpoint} - Returned ${result.rows.length} events for ${year}-${month}`);
     res.json(result.rows);
   } catch (error) {
-    console.error('Error fetching events by month:', error);
-    res.status(500).json({ error: 'Failed to fetch events' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to fetch events', endpoint });
   }
 });
 
 // 添加演出
 app.post('/api/events', async (req, res) => {
+  const endpoint = 'POST /api/events';
   try {
     const { date, type, troupe, city, location, content } = req.body;
     
     if (!date || !type || !troupe || !city || !location || !content) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      console.log(`⚠️ ${endpoint} - Missing required fields`);
+      return res.status(400).json({ error: 'Missing required fields', endpoint });
     }
 
     const { typeId, troupeId, cityId, locationId } = await resolveIds({ type, troupe, city, location });
@@ -218,21 +245,24 @@ app.post('/api/events', async (req, res) => {
       [date, typeId, troupeId, cityId, locationId, content]
     );
     
-    res.json({ id: result.rows[0].id, message: 'Event created successfully' });
+    console.log(`✅ ${endpoint} - Created event ID: ${result.rows[0].id}`);
+    res.json({ id: result.rows[0].id, message: 'Event created successfully', endpoint });
   } catch (error) {
-    console.error('Error creating event:', error);
-    res.status(500).json({ error: 'Failed to create event' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to create event', endpoint });
   }
 });
 
 // 更新演出
 app.put('/api/events/:id', async (req, res) => {
+  const endpoint = 'PUT /api/events/:id';
   try {
     const { id } = req.params;
     const { date, type, troupe, city, location, content } = req.body;
     
     if (!date || !type || !troupe || !city || !location || !content) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      console.log(`⚠️ ${endpoint} - Missing required fields`);
+      return res.status(400).json({ error: 'Missing required fields', endpoint });
     }
 
     const { typeId, troupeId, cityId, locationId } = await resolveIds({ type, troupe, city, location });
@@ -243,58 +273,67 @@ app.put('/api/events/:id', async (req, res) => {
     );
     
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Event not found' });
+      console.log(`⚠️ ${endpoint} - Event not found: ID ${id}`);
+      return res.status(404).json({ error: 'Event not found', endpoint });
     }
     
-    res.json({ message: 'Event updated successfully' });
+    console.log(`✅ ${endpoint} - Updated event ID: ${id}`);
+    res.json({ message: 'Event updated successfully', endpoint });
   } catch (error) {
-    console.error('Error updating event:', error);
-    res.status(500).json({ error: 'Failed to update event' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to update event', endpoint });
   }
 });
 
 // 删除演出
 app.delete('/api/events/:id', async (req, res) => {
+  const endpoint = 'DELETE /api/events/:id';
   try {
     const { id } = req.params;
     
     const result = await pool.query('DELETE FROM events WHERE id = $1', [id]);
     
     if (result.rowCount === 0) {
-      return res.status(404).json({ error: 'Event not found' });
+      console.log(`⚠️ ${endpoint} - Event not found: ID ${id}`);
+      return res.status(404).json({ error: 'Event not found', endpoint });
     }
     
-    res.json({ message: 'Event deleted successfully' });
+    console.log(`✅ ${endpoint} - Deleted event ID: ${id}`);
+    res.json({ message: 'Event deleted successfully', endpoint });
   } catch (error) {
-    console.error('Error deleting event:', error);
-    res.status(500).json({ error: 'Failed to delete event' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to delete event', endpoint });
   }
 });
 
 // 获取所有剧团列表
 app.get('/api/troupes', async (req, res) => {
+  const endpoint = 'GET /api/troupes';
   try {
     const result = await pool.query('SELECT name FROM troupes ORDER BY name');
     const troupes = result.rows.map(row => row.name);
+    console.log(`✅ ${endpoint} - Returned ${troupes.length} troupes`);
     res.json(troupes);
   } catch (error) {
-    console.error('Error fetching troupes:', error);
-    res.status(500).json({ error: 'Failed to fetch troupes' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to fetch troupes', endpoint });
   }
 });
 
 // 获取所有城市列表
 app.get('/api/cities', async (req, res) => {
+  const endpoint = 'GET /api/cities';
   try {
     const result = await pool.query('SELECT name FROM cities ORDER BY name');
     const cities = result.rows.map(row => row.name);
+    console.log(`✅ ${endpoint} - Returned ${cities.length} cities`);
     res.json(cities);
   } catch (error) {
-    console.error('Error fetching cities:', error);
-    res.status(500).json({ error: 'Failed to fetch cities' });
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: 'Failed to fetch cities', endpoint });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });

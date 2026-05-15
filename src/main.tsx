@@ -1,13 +1,15 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message } from 'antd';
+import { ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message, Menu } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import { CustomCalendar } from './components/CustomCalendar';
 import { MobileCardView } from './components/MobileCardView';
 import { ExportImage } from './components/ExportImage';
+import { AdminPage } from './components/AdminPage';
 import { usePageScroll } from './hooks/usePageScroll';
 import { api, Event } from './api';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import './style.css';
 import './styles/custom-calendar.css';
 import './styles/mobile.css';
@@ -27,90 +29,117 @@ const container = document.getElementById('root');
 if (container) {
   const root = createRoot(container);
   
-  const RootApp = () => {
-    const [currentDate, setCurrentDate] = useState(defaultDate);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
-    const [events, setEvents] = useState<Event[]>([]);
-    
-    // 暂时禁用滚动翻页功能
-    // usePageScroll(currentDate, setCurrentDate, modalVisible);
+  const AppHeader = ({ 
+    currentDate, 
+    setCurrentDate 
+  }: { 
+    currentDate: dayjs.Dayjs;
+    setCurrentDate: (date: dayjs.Dayjs) => void;
+  }) => {
+    const location = useLocation();
     
     const year = currentDate.year();
     const month = currentDate.month();
     
-    const yearOptions = Array.from({ length: 10 }, (_, i) => ({
-      label: `${year - 5 + i}年`,
-      value: year - 5 + i,
-    }));
+    const yearOptions = useMemo(() => {
+      return Array.from({ length: 10 }, (_, i) => ({
+        label: `${year - 5 + i}年`,
+        value: year - 5 + i,
+      }));
+    }, [year]);
     
-    const monthOptions = Array.from({ length: 12 }, (_, i) => ({
-      label: dayjs().month(i).format('MMM'),
-      value: i,
-    }));
+    const monthOptions = useMemo(() => {
+      return Array.from({ length: 12 }, (_, i) => ({
+        label: dayjs().month(i).format('MMM'),
+        value: i,
+      }));
+    }, []);
+
+    const menuItems = [
+      {
+        key: '/',
+        label: <Link to="/">日历</Link>,
+      },
+      {
+        key: '/admin',
+        label: <Link to="/admin">管理后台</Link>,
+      },
+    ];
+
+    return (
+      <Layout.Header className="app-header">
+        <div className="header-content">
+          <h1 className="header-title">2025年粤剧春班日历</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {location.pathname === '/' && (
+              <>
+                <Select
+                  value={year}
+                  options={yearOptions}
+                  onChange={(newYear) => setCurrentDate(currentDate.year(newYear))}
+                  style={{ width: 100 }}
+                />
+                <Select
+                  value={month}
+                  options={monthOptions}
+                  onChange={(newMonth) => setCurrentDate(currentDate.month(newMonth))}
+                  style={{ width: 80 }}
+                />
+              </>
+            )}
+            <Menu
+              mode="horizontal"
+              selectedKeys={[location.pathname]}
+              items={menuItems}
+              style={{ border: 'none', minWidth: 200 }}
+            />
+          </div>
+        </div>
+      </Layout.Header>
+    );
+  };
+  
+  const RootApp = () => {
+    const [currentDate, setCurrentDate] = useState(defaultDate);
     
     return (
-      <Layout style={{ minHeight: '100vh' }}>
-        <Layout.Header className="app-header">
-          <div className="header-content">
-            <h1 className="header-title">2025年粤剧春班日历</h1>
-            <div className="header-date-controls">
-              <Select
-                value={year}
-                options={yearOptions}
-                onChange={(newYear) => setCurrentDate(currentDate.year(newYear))}
-                style={{ width: 100 }}
-              />
-              <Select
-                value={month}
-                options={monthOptions}
-                onChange={(newMonth) => setCurrentDate(currentDate.month(newMonth))}
-                style={{ width: 80 }}
-              />
-              <ExportImage events={events} currentDate={currentDate} />
-              <Radio.Group 
-                value={viewMode} 
-                onChange={(e) => setViewMode(e.target.value)}
-                buttonStyle="solid"
-              >
-                <Radio.Button value="calendar">日历</Radio.Button>
-                <Radio.Button value="list">列表</Radio.Button>
-              </Radio.Group>
-            </div>
-          </div>
-        </Layout.Header>
-        <Layout.Content style={{ paddingTop: 0 }}>
-          <CalendarApp 
+      <Router>
+        <Layout style={{ minHeight: '100vh' }}>
+          <AppHeader 
             currentDate={currentDate} 
-            onDateChange={setCurrentDate}
-            modalVisible={modalVisible}
-            setModalVisible={setModalVisible}
-            viewMode={viewMode}
-            onEventsChange={setEvents}
+            setCurrentDate={setCurrentDate} 
           />
-        </Layout.Content>
-      </Layout>
+          <Layout.Content style={{ paddingTop: 0 }}>
+            <Routes>
+              <Route 
+                path="/" 
+                element={
+                  <CalendarApp 
+                    currentDate={currentDate}
+                    onDateChange={setCurrentDate}
+                  />
+                } 
+              />
+              <Route path="/admin" element={<AdminPage />} />
+            </Routes>
+          </Layout.Content>
+        </Layout>
+      </Router>
     );
   };
   
   const CalendarApp = ({ 
     currentDate, 
-    onDateChange,
-    modalVisible,
-    setModalVisible,
-    viewMode,
-    onEventsChange
+    onDateChange 
   }: { 
-    currentDate: dayjs.Dayjs; 
+    currentDate: dayjs.Dayjs;
     onDateChange: (date: dayjs.Dayjs) => void;
-    modalVisible: boolean;
-    setModalVisible: (visible: boolean) => void;
-    viewMode: 'calendar' | 'list';
-    onEventsChange?: (events: Event[]) => void;
   }) => {
+    const [modalVisible, setModalVisible] = useState(false);
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const [events, setEvents] = useState<Event[]>([]);
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
-    const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [editingDate, setEditingDate] = useState<dayjs.Dayjs | null>(null);
@@ -128,7 +157,6 @@ if (container) {
         const month = date.month() + 1; // dayjs months are 0-indexed
         const data = await api.getEventsByMonth(year, month);
         setEvents(data);
-        onEventsChange?.(data);
       } catch (err) {
         console.error('Failed to fetch events:', err);
         setError('加载演出数据失败，请稍后重试');
@@ -323,7 +351,23 @@ if (container) {
 
     return (
       <div className="calendar-wrapper">
-        <ExportImage events={events} currentDate={currentDate} />
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          padding: '16px 24px',
+          gap: 16
+        }}>
+          <ExportImage events={events} currentDate={currentDate} />
+          <Radio.Group 
+            value={viewMode} 
+            onChange={(e) => setViewMode(e.target.value)}
+            buttonStyle="solid"
+          >
+            <Radio.Button value="calendar">日历</Radio.Button>
+            <Radio.Button value="list">列表</Radio.Button>
+          </Radio.Group>
+        </div>
+        
         {error && (
           <Alert
             message="错误"
@@ -332,7 +376,7 @@ if (container) {
             showIcon
             closable
             onClose={() => setError(null)}
-            style={{ marginBottom: 16 }}
+            style={{ marginBottom: 16, margin: '0 24px' }}
           />
         )}
         <Spin spinning={loading} tip="加载中...">

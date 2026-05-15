@@ -43,8 +43,9 @@ export const api = {
 
   // 根据月份获取演出
   async getEventsByMonth(year: number, month: number): Promise<Event[]> {
+    const yearMonth = `${year}-${month.toString().padStart(2, '0')}`;
     const response = await fetch(
-      `${API_BASE_URL}/api/events/by-month/${year}/${month}`
+      `${API_BASE_URL}/api/events/by-month/${yearMonth}`
     );
     if (!response.ok) throw new Error('Failed to fetch events');
     return response.json();
