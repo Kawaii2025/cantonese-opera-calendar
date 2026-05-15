@@ -9,7 +9,7 @@ import { ExportImage } from './components/ExportImage';
 import { AdminPage } from './components/AdminPage';
 import { usePageScroll } from './hooks/usePageScroll';
 import { api, Event } from './api';
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import './style.css';
 import './styles/custom-calendar.css';
 import './styles/mobile.css';
