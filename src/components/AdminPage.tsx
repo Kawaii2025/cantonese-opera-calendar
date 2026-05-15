@@ -36,6 +36,7 @@ export const AdminPage = () => {
   const [troupes, setTroupes] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'descend' | 'ascend'>('descend');
 
   const fetchAllData = async () => {
     try {
@@ -122,13 +123,13 @@ export const AdminPage = () => {
 
   const columns = [
     {
-      title: '日期',
-      dataIndex: 'date',
-      key: 'date',
-      render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
-      sorter: (a: Event, b: Event) => dayjs(a.date).unix() - dayjs(b.date).unix(),
-      defaultSortOrder: 'ascend' as const,
-    },
+            title: '日期',
+            dataIndex: 'date',
+            key: 'date',
+            render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
+            sorter: (a: Event, b: Event) => dayjs(b.date).unix() - dayjs(a.date).unix(),
+            defaultSortOrder: 'descend' as const,
+        },
     {
       title: '场次',
       dataIndex: 'type',
@@ -298,7 +299,7 @@ export const AdminPage = () => {
             name="troupe"
             rules={[{ required: true, message: '请输入或选择剧团' }]}
           >
-            <Select mode="tags" placeholder="请输入或选择剧团">
+            <Select placeholder="请输入或选择剧团">
               {troupes.map(troupe => (
                 <Option key={troupe} value={troupe}>{troupe}</Option>
               ))}
@@ -310,7 +311,7 @@ export const AdminPage = () => {
             name="city"
             rules={[{ required: true, message: '请输入或选择城市' }]}
           >
-            <Select mode="tags" placeholder="请输入或选择城市">
+            <Select placeholder="请输入或选择城市">
               {cities.map(city => (
                 <Option key={city} value={city}>{city}</Option>
               ))}

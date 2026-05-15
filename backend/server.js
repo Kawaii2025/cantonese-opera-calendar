@@ -170,7 +170,7 @@ app.get('/api/events', async (req, res) => {
       paramIndex++;
     }
     
-    query += ' ORDER BY e.date ASC, et.name';
+    query += ' ORDER BY e.date DESC, et.name';
     
     const result = await pool.query(query, params);
     console.log(`✅ ${endpoint} - Returned ${result.rows.length} events`);
@@ -233,6 +233,16 @@ app.post('/api/events', async (req, res) => {
   try {
     const { date, type, troupe, city, location, content } = req.body;
     
+    // Reject array values
+    if (Array.isArray(troupe)) {
+      console.log(`⚠️ ${endpoint} - troupe should be a string, not array`);
+      return res.status(400).json({ error: 'troupe should be a single string value', endpoint });
+    }
+    if (Array.isArray(city)) {
+      console.log(`⚠️ ${endpoint} - city should be a string, not array`);
+      return res.status(400).json({ error: 'city should be a single string value', endpoint });
+    }
+    
     if (!date || !type || !troupe || !city || !location || !content) {
       console.log(`⚠️ ${endpoint} - Missing required fields`);
       return res.status(400).json({ error: 'Missing required fields', endpoint });
@@ -259,6 +269,16 @@ app.put('/api/events/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { date, type, troupe, city, location, content } = req.body;
+    
+    // Reject array values
+    if (Array.isArray(troupe)) {
+      console.log(`⚠️ ${endpoint} - troupe should be a string, not array`);
+      return res.status(400).json({ error: 'troupe should be a single string value', endpoint });
+    }
+    if (Array.isArray(city)) {
+      console.log(`⚠️ ${endpoint} - city should be a string, not array`);
+      return res.status(400).json({ error: 'city should be a single string value', endpoint });
+    }
     
     if (!date || !type || !troupe || !city || !location || !content) {
       console.log(`⚠️ ${endpoint} - Missing required fields`);
