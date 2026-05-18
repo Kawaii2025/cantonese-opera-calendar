@@ -303,16 +303,9 @@ if (container) {
           ? item.content 
           : `《${item.content}》`;
         
-        // 根据type字段确定显示的时间标签
-        const isAfternoon = item.type === 'afternoon';
-        const timeLabel = isAfternoon ? '下午场' : '晚场';
-        
         return (
           <li key={index} className="item-troupe">
             <Flex gap="4px 0" wrap align="center">
-              {troupeRender(item.troupe)}
-              {cityRender(item.city)}
-              <span style={{ fontSize: '12px', color: '#666', lineHeight: '20px', height: '20px', display: 'inline-block' }}>{timeLabel}</span>
               {locationRender(item.location)}
             </Flex>
             <span className="item-content item-play-name">{content}</span>
