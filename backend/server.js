@@ -27,6 +27,8 @@ const corsOptions = {
 };
 
 app.use((req, res, next) => {
+  console.log("ENV CORS Origins:", process.env.CORS_ORIGINS);
+  console.log("CORS Origins:", corsOptions.origin);
   console.log({
     method: req.method,
     origin: req.headers.origin,
