@@ -272,7 +272,7 @@ app.put('/api/events/:id', async (req, res) => {
     
     // Reject array values
     if (Array.isArray(troupe)) {
-      console.log(`⚠️ ${endpoint} - troupe should be a string, not array`);
+      // console.log(`⚠️ ${endpoint} - troupe should be a string, not array`);
       return res.status(400).json({ error: 'troupe should be a single string value', endpoint });
     }
     if (Array.isArray(city)) {
