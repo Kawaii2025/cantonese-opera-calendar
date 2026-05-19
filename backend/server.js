@@ -26,6 +26,8 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+// Debug middleware to log CORS origins and request details
+/* 
 app.use((req, res, next) => {
   console.log("ENV CORS Origins:", process.env.CORS_ORIGINS);
   console.log("CORS Origins:", corsOptions.origin);
@@ -37,6 +39,7 @@ app.use((req, res, next) => {
 
   next();
 });
+*/
 
 app.use(cors(corsOptions));
 app.use(express.json());
