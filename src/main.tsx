@@ -50,7 +50,7 @@ if (container) {
     
     const monthOptions = useMemo(() => {
       return Array.from({ length: 12 }, (_, i) => ({
-        label: dayjs().month(i).format('MMM'),
+        label: `${i + 1}月`,
         value: i,
       }));
     }, []);
@@ -138,6 +138,9 @@ if (container) {
     const [modalVisible, setModalVisible] = useState(false);
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
     const [events, setEvents] = useState<Event[]>([]);
+    const [troupes, setTroupes] = useState<string[]>([]);
+    const [cities, setCities] = useState<string[]>([]);
+    const [selectedTroupe, setSelectedTroupe] = useState<string>('');
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -155,8 +158,14 @@ if (container) {
         setError(null);
         const year = date.year();
         const month = date.month() + 1; // dayjs months are 0-indexed
-        const data = await api.getEventsByMonth(year, month);
-        setEvents(data);
+        const [eventsData, troupesData, citiesData] = await Promise.all([
+          api.getEventsByMonth(year, month),
+          api.getTroupes(),
+          api.getCities()
+        ]);
+        setEvents(eventsData);
+        setTroupes(troupesData);
+        setCities(citiesData);
       } catch (err) {
         console.error('Failed to fetch events:', err);
         setError('加载演出数据失败，请稍后重试');
@@ -170,6 +179,22 @@ if (container) {
       fetchMonthData(currentDate);
     }, [currentDate.year(), currentDate.month()]);
 
+    // Filter events by selected troupe
+    const filteredEvents = useMemo(() => {
+      if (!selectedTroupe) return events;
+      return events.filter(event => event.troupe === selectedTroupe);
+    }, [events, selectedTroupe]);
+
+    // 自动添加书名号
+    const formatContent = (content: string) => {
+      if (!content) return content;
+      const trimmed = content.trim();
+      if (trimmed.startsWith('《') && trimmed.endsWith('》')) {
+        return trimmed;
+      }
+      return `《${trimmed}》`;
+    };
+
     const handleEditSubmit = async (values: any) => {
       if (!editingDate) return;
       
@@ -181,7 +206,7 @@ if (container) {
           troupe: values.troupe,
           city: values.city,
           location: values.location,
-          content: values.content,
+          content: formatContent(values.content),
           type: values.type || 'evening',
         };
         
@@ -204,7 +229,7 @@ if (container) {
     // Build a map of events by date for quick lookup
     const eventsByDate = useMemo(() => {
       const map = new Map<string, Event[]>();
-      events.forEach(event => {
+      filteredEvents.forEach(event => {
         const dateKey = dayjs(event.date).format('YYYY-MM-DD');
         if (!map.has(dateKey)) {
           map.set(dateKey, []);
@@ -212,7 +237,7 @@ if (container) {
         map.get(dateKey)!.push(event);
       });
       return map;
-    }, [events]);
+    }, [filteredEvents]);
     
     const monthCellRender = (value: dayjs.Dayjs) => {
       const num = getMonthData(value);
@@ -272,20 +297,25 @@ if (container) {
       return <Tag color={color}>{city || ''}</Tag>;
     };
 
-    const troupeRender = (troupe: string) => {
-      const map: Record<string, { color: string; name: string }> = {
-        广州团: { color: '#2f54eb', name: '广州团' },
-        佛山团: { color: '#f5222d', name: '佛山团' },
-        红豆团: { color: '#ff4d4f', name: '红豆团' },
-        省一团: { color: '#faad14', name: '省一团' },
-        省二团: { color: '#a0d911', name: '省二团' },
-        深圳团: { color: '#eb2f96', name: '深圳团' },
-        珠海团: { color: '#ffc53d', name: '珠海团' },
-        省院: { color: '#fa541c', name: '省院' },
-        大湾区: { color: '#7b189a', name: '大湾区' },
+    // 获取剧团颜色
+    const getTroupeColor = (troupe: string) => {
+      const map: Record<string, string> = {
+        广州团: '#2f54eb',
+        佛山团: '#f5222d',
+        红豆团: '#ff4d4f',
+        省一团: '#faad14',
+        省二团: '#a0d911',
+        深圳团: '#eb2f96',
+        珠海团: '#ffc53d',
+        省院: '#fa541c',
+        大湾区: '#7b189a',
       };
-      const { color, name } = map[troupe] || { color: '', name: troupe };
-      return <Tag color={color}>{name}</Tag>;
+      return map[troupe] || '';
+    };
+
+    const troupeRender = (troupe: string) => {
+      const color = getTroupeColor(troupe);
+      return <Tag color={color}>{troupe}</Tag>;
     };
 
     const locationRender = (location: string) => {
@@ -307,6 +337,7 @@ if (container) {
         return (
           <li key={index} className="item-troupe">
             <Flex gap="4px 0" wrap align="center">
+              {troupeRender(item.troupe)}
               {locationRender(item.location)}
             </Flex>
             <span className="item-content item-play-name">{content}</span>
@@ -349,9 +380,34 @@ if (container) {
           display: 'flex', 
           justifyContent: 'flex-end', 
           padding: '16px 24px',
-          gap: 16
+          gap: 16,
+          alignItems: 'center'
         }}>
           <ExportImage events={events} currentDate={currentDate} />
+          <Select
+            style={{ width: 150 }}
+            placeholder="筛选剧团"
+            allowClear
+            value={selectedTroupe}
+            onChange={setSelectedTroupe}
+          >
+            {troupes.map(troupe => (
+              <Select.Option key={troupe} value={troupe}>
+                <Tag 
+                  color={getTroupeColor(troupe)} 
+                  style={{ 
+                    marginRight: 8, 
+                    minWidth: '64px', 
+                    textAlign: 'center',
+                    display: 'inline-block'
+                  }}
+                >
+                  {troupe}
+                </Tag>
+                {troupe}
+              </Select.Option>
+            ))}
+          </Select>
           <Radio.Group 
             value={viewMode} 
             onChange={(e) => setViewMode(e.target.value)}
@@ -462,14 +518,6 @@ if (container) {
             style={{ marginTop: 24 }}
           >
             <Form.Item
-              label="剧团"
-              name="troupe"
-              rules={[{ required: true, message: '请输入剧团名称' }]}
-            >
-              <Input placeholder="例如：广州团" />
-            </Form.Item>
-
-            <Form.Item
               label="演出剧目"
               name="content"
               rules={[{ required: true, message: '请输入演出剧目' }]}
@@ -478,11 +526,31 @@ if (container) {
             </Form.Item>
 
             <Form.Item
+              label="剧团"
+              name="troupe"
+              rules={[{ required: true, message: '请选择剧团' }]}
+            >
+              <Select placeholder="请选择剧团" showSearch allowClear>
+                {troupes.map(troupe => (
+                  <Select.Option key={troupe} value={troupe}>
+                    {troupe}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+
+            <Form.Item
               label="城市"
               name="city"
-              rules={[{ required: true, message: '请输入城市' }]}
+              rules={[{ required: true, message: '请选择城市' }]}
             >
-              <Input placeholder="例如：广州" />
+              <Select placeholder="请选择城市" showSearch allowClear>
+                {cities.map(city => (
+                  <Select.Option key={city} value={city}>
+                    {city}
+                  </Select.Option>
+                ))}
+              </Select>
             </Form.Item>
 
             <Form.Item

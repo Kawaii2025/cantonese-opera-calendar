@@ -90,6 +90,16 @@ export const AdminPage = () => {
     }
   };
 
+  // 自动添加书名号
+  const formatContent = (content: string) => {
+    if (!content) return content;
+    const trimmed = content.trim();
+    if (trimmed.startsWith('《') && trimmed.endsWith('》')) {
+      return trimmed;
+    }
+    return `《${trimmed}》`;
+  };
+
   const handleSubmit = async (values: any) => {
     try {
       setSubmitting(true);
@@ -99,7 +109,7 @@ export const AdminPage = () => {
         troupe: values.troupe,
         city: values.city,
         location: values.location,
-        content: values.content,
+        content: formatContent(values.content),
       };
 
       if (editingEvent && editingEvent.id) {
