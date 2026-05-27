@@ -269,7 +269,7 @@ if (container) {
       };
 
       const color = map[city] || '';
-      return <Tag color={color}> {city || ''}</Tag>;
+      return <Tag color={color}>{city || ''}</Tag>;
     };
 
     const troupeRender = (troupe: string) => {
@@ -282,13 +282,14 @@ if (container) {
         深圳团: { color: '#eb2f96', name: '深圳团' },
         珠海团: { color: '#ffc53d', name: '珠海团' },
         省院: { color: '#fa541c', name: '省院' },
+        大湾区: { color: '#7b189a', name: '大湾区' },
       };
-      const { color, name } = map[troupe] || { color: '', name: '' };
-      return <Tag color={color}> {name || ''}</Tag>;
+      const { color, name } = map[troupe] || { color: '', name: troupe };
+      return <Tag color={color}>{name}</Tag>;
     };
 
     const locationRender = (location: string) => {
-      return <Tag color="red"> {location || ''}</Tag>;
+      return <Tag color="red">{location || ''}</Tag>;
     };
 
     const dateCellRender = (value: dayjs.Dayjs) => {
@@ -414,7 +415,7 @@ if (container) {
               return (
                 <div key={index} className="modal-event-item">
                   <div className="modal-event-header">
-                    <Flex gap="4px 0" wrap>
+                    <Flex gap="8px" wrap>
                       {troupeRender(item.troupe)}
                       {cityRender(item.city)}
                       {locationRender(item.location)}

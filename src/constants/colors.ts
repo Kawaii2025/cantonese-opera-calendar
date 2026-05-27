@@ -22,4 +22,5 @@ export const troupeColors: Record<string, string> = {
   深圳团: '#eb2f96',
   珠海团: '#ffc53d',
   省院: '#fa541c',
+  大湾区: '#7b189aff',
 };
