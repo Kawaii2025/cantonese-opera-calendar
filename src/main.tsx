@@ -195,6 +195,46 @@ if (container) {
       return `《${trimmed}》`;
     };
 
+    // 保存历史记录到 localStorage
+    const saveHistory = (key: string, value: string) => {
+      const historyKey = `event_history_${key}`;
+      let history: string[] = [];
+      try {
+        const saved = localStorage.getItem(historyKey);
+        if (saved) {
+          history = JSON.parse(saved);
+        }
+      } catch (e) {
+        // ignore
+      }
+      // 移除已存在的值，添加到最前面
+      history = history.filter(v => v !== value);
+      history.unshift(value);
+      // 只保存最近10个
+      history = history.slice(0, 10);
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    };
+
+    // 从 localStorage 读取历史记录
+    const getHistory = (key: string): string[] => {
+      const historyKey = `event_history_${key}`;
+      try {
+        const saved = localStorage.getItem(historyKey);
+        if (saved) {
+          return JSON.parse(saved);
+        }
+      } catch (e) {
+        // ignore
+      }
+      return [];
+    };
+
+    // 获取最近使用的值
+    const getLastValue = (key: string): string | undefined => {
+      const history = getHistory(key);
+      return history[0];
+    };
+
     const handleEditSubmit = async (values: any) => {
       if (!editingDate) return;
       
@@ -211,6 +251,13 @@ if (container) {
         };
         
         await api.createEvent(newEvent);
+        
+        // 保存到历史记录
+        saveHistory('troupe', values.troupe);
+        saveHistory('city', values.city);
+        saveHistory('location', values.location);
+        saveHistory('type', values.type || 'evening');
+        
         message.success('演出信息添加成功');
         
         // Refresh the month data
@@ -262,6 +309,21 @@ if (container) {
         setEditingDate(value);
         setEditModalVisible(true);
         lastClickRef.current = null;
+        
+        // 设置历史值
+        setTimeout(() => {
+          const lastTroupe = getLastValue('troupe');
+          const lastCity = getLastValue('city');
+          const lastLocation = getLastValue('location');
+          const lastType = getLastValue('type');
+          
+          editForm.setFieldsValue({
+            troupe: lastTroupe,
+            city: lastCity,
+            location: lastLocation,
+            type: lastType || 'evening',
+          });
+        }, 0);
       } else {
         // 单击 - 记录点击信息，等待可能的第二次点击
         lastClickRef.current = { date: dateKey, time: now };
@@ -531,11 +593,29 @@ if (container) {
               rules={[{ required: true, message: '请选择剧团' }]}
             >
               <Select placeholder="请选择剧团" showSearch allowClear>
-                {troupes.map(troupe => (
-                  <Select.Option key={troupe} value={troupe}>
-                    {troupe}
-                  </Select.Option>
-                ))}
+                {/* 优先显示历史记录 */}
+                {(() => {
+                  const history = getHistory('troupe');
+                  const historySet = new Set(history);
+                  const otherTroupes = troupes.filter(t => !historySet.has(t));
+                  return [
+                    ...history.map(troupe => (
+                      <Select.Option key={`history_${troupe}`} value={troupe}>
+                        <Tag color={getTroupeColor(troupe)} style={{ marginRight: 8 }}>
+                          {troupe}
+                        </Tag>
+                      </Select.Option>
+                    )),
+
+                    ...otherTroupes.map(troupe => (
+                      <Select.Option key={troupe} value={troupe}>
+                        <Tag color={getTroupeColor(troupe)} style={{ marginRight: 8 }}>
+                          {troupe}
+                        </Tag>
+                      </Select.Option>
+                    )),
+                  ];
+                })()}
               </Select>
             </Form.Item>
 
@@ -545,11 +625,25 @@ if (container) {
               rules={[{ required: true, message: '请选择城市' }]}
             >
               <Select placeholder="请选择城市" showSearch allowClear>
-                {cities.map(city => (
-                  <Select.Option key={city} value={city}>
-                    {city}
-                  </Select.Option>
-                ))}
+                {/* 优先显示历史记录 */}
+                {(() => {
+                  const history = getHistory('city');
+                  const historySet = new Set(history);
+                  const otherCities = cities.filter(c => !historySet.has(c));
+                  return [
+                    ...history.map(city => (
+                      <Select.Option key={`history_${city}`} value={city}>
+                        {city}
+                      </Select.Option>
+                    )),
+
+                    ...otherCities.map(city => (
+                      <Select.Option key={city} value={city}>
+                        {city}
+                      </Select.Option>
+                    )),
+                  ];
+                })()}
               </Select>
             </Form.Item>
 
@@ -558,13 +652,27 @@ if (container) {
               name="location"
               rules={[{ required: true, message: '请输入场所' }]}
             >
-              <Input placeholder="例如：广州大剧院" />
+              <Select 
+                placeholder="例如：广州大剧院" 
+                showSearch 
+                allowClear 
+                dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+              >
+                {/* 优先显示历史记录 */}
+                {(() => {
+                  const history = getHistory('location');
+                  return history.map(location => (
+                    <Select.Option key={`history_${location}`} value={location}>
+                      {location}
+                    </Select.Option>
+                  ));
+                })()}
+              </Select>
             </Form.Item>
 
             <Form.Item
               label="场次"
               name="type"
-              initialValue="evening"
             >
               <Select
                 options={[

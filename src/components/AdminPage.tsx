@@ -23,6 +23,7 @@ import {
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api, Event } from '../api';
+import { troupeColors } from '../constants/colors';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -65,6 +66,21 @@ export const AdminPage = () => {
     setEditingEvent(null);
     form.resetFields();
     setModalVisible(true);
+    
+    // 设置历史值
+    setTimeout(() => {
+      const lastTroupe = getLastValue('troupe');
+      const lastCity = getLastValue('city');
+      const lastLocation = getLastValue('location');
+      const lastType = getLastValue('type');
+      
+      form.setFieldsValue({
+        troupe: lastTroupe,
+        city: lastCity,
+        location: lastLocation,
+        type: lastType || 'evening',
+      });
+    }, 0);
   };
 
   const handleEdit = (event: Event) => {
@@ -100,6 +116,46 @@ export const AdminPage = () => {
     return `《${trimmed}》`;
   };
 
+  // 保存历史记录到 localStorage
+  const saveHistory = (key: string, value: string) => {
+    const historyKey = `event_history_${key}`;
+    let history: string[] = [];
+    try {
+      const saved = localStorage.getItem(historyKey);
+      if (saved) {
+        history = JSON.parse(saved);
+      }
+    } catch (e) {
+      // ignore
+    }
+    // 移除已存在的值，添加到最前面
+    history = history.filter(v => v !== value);
+    history.unshift(value);
+    // 只保存最近10个
+    history = history.slice(0, 10);
+    localStorage.setItem(historyKey, JSON.stringify(history));
+  };
+
+  // 从 localStorage 读取历史记录
+  const getHistory = (key: string): string[] => {
+    const historyKey = `event_history_${key}`;
+    try {
+      const saved = localStorage.getItem(historyKey);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      // ignore
+    }
+    return [];
+  };
+
+  // 获取最近使用的值
+  const getLastValue = (key: string): string | undefined => {
+    const history = getHistory(key);
+    return history[0];
+  };
+
   const handleSubmit = async (values: any) => {
     try {
       setSubmitting(true);
@@ -120,6 +176,14 @@ export const AdminPage = () => {
         message.success('添加成功');
       }
 
+      // 保存到历史记录（只在新建时保存）
+      if (!editingEvent) {
+        saveHistory('troupe', values.troupe);
+        saveHistory('city', values.city);
+        saveHistory('location', values.location);
+        saveHistory('type', values.type);
+      }
+
       setModalVisible(false);
       form.resetFields();
       fetchAllData();
@@ -133,11 +197,13 @@ export const AdminPage = () => {
 
   const columns = [
     {
-            title: '日期',
-            dataIndex: 'date',
-            key: 'date',
-            render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
-        },
+      title: '日期',
+      dataIndex: 'date',
+      key: 'date',
+      sorter: (a: Event, b: Event) => dayjs(a.date).unix() - dayjs(b.date).unix(),
+      defaultSortOrder: 'descend' as const,
+      render: (date: string) => dayjs(date).format('YYYY-MM-DD'),
+    },
     {
       title: '场次',
       dataIndex: 'type',
@@ -159,6 +225,13 @@ export const AdminPage = () => {
       key: 'troupe',
       filters: [...new Set(events.map(e => e.troupe))].map(t => ({ text: t, value: t })),
       onFilter: (value: any, record: Event) => record.troupe === value,
+      render: (troupe: string) => {
+        const color = troupeColors[troupe as keyof typeof troupeColors];
+        if (color) {
+          return <Tag color={color}>{troupe}</Tag>;
+        }
+        return troupe;
+      },
     },
     {
       title: '城市',
@@ -293,7 +366,6 @@ export const AdminPage = () => {
           <Form.Item
             label="场次"
             name="type"
-            initialValue="evening"
             rules={[{ required: true, message: '请选择场次' }]}
           >
             <Select placeholder="请选择场次">
@@ -303,26 +375,70 @@ export const AdminPage = () => {
           </Form.Item>
 
           <Form.Item
+            label="剧目"
+            name="content"
+            rules={[{ required: true, message: '请输入剧目' }]}
+          >
+            <Input placeholder="例如：南海十三郎" />
+          </Form.Item>
+
+          <Form.Item
             label="剧团"
             name="troupe"
-            rules={[{ required: true, message: '请输入或选择剧团' }]}
+            rules={[{ required: true, message: '请选择剧团' }]}
           >
-            <Select placeholder="请输入或选择剧团">
-              {troupes.map(troupe => (
-                <Option key={troupe} value={troupe}>{troupe}</Option>
-              ))}
+            <Select placeholder="请选择剧团" showSearch allowClear>
+              {/* 优先显示历史记录 */}
+              {(() => {
+                const history = getHistory('troupe');
+                const historySet = new Set(history);
+                const otherTroupes = troupes.filter(t => !historySet.has(t));
+                return [
+                  ...history.map(troupe => (
+                    <Option key={`history_${troupe}`} value={troupe}>
+                      <Tag color={troupeColors[troupe as keyof typeof troupeColors]} style={{ marginRight: 8 }}>
+                        {troupe}
+                      </Tag>
+                    </Option>
+                  )),
+
+                  ...otherTroupes.map(troupe => (
+                    <Option key={troupe} value={troupe}>
+                      <Tag color={troupeColors[troupe as keyof typeof troupeColors]} style={{ marginRight: 8 }}>
+                        {troupe}
+                      </Tag>
+                    </Option>
+                  )),
+                ];
+              })()}
             </Select>
           </Form.Item>
 
           <Form.Item
             label="城市"
             name="city"
-            rules={[{ required: true, message: '请输入或选择城市' }]}
+            rules={[{ required: true, message: '请选择城市' }]}
           >
-            <Select placeholder="请输入或选择城市">
-              {cities.map(city => (
-                <Option key={city} value={city}>{city}</Option>
-              ))}
+            <Select placeholder="请选择城市" showSearch allowClear>
+              {/* 优先显示历史记录 */}
+              {(() => {
+                const history = getHistory('city');
+                const historySet = new Set(history);
+                const otherCities = cities.filter(c => !historySet.has(c));
+                return [
+                  ...history.map(city => (
+                    <Option key={`history_${city}`} value={city}>
+                      {city}
+                    </Option>
+                  )),
+
+                  ...otherCities.map(city => (
+                    <Option key={city} value={city}>
+                      {city}
+                    </Option>
+                  )),
+                ];
+              })()}
             </Select>
           </Form.Item>
 
@@ -331,15 +447,22 @@ export const AdminPage = () => {
             name="location"
             rules={[{ required: true, message: '请输入场所' }]}
           >
-            <Input placeholder="例如：广州大剧院" />
-          </Form.Item>
-
-          <Form.Item
-            label="剧目"
-            name="content"
-            rules={[{ required: true, message: '请输入剧目' }]}
-          >
-            <Input placeholder="例如：南海十三郎" />
+            <Select 
+              placeholder="例如：广州大剧院" 
+              showSearch 
+              allowClear 
+              dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
+            >
+              {/* 优先显示历史记录 */}
+              {(() => {
+                const history = getHistory('location');
+                return history.map(location => (
+                  <Option key={`history_${location}`} value={location}>
+                    {location}
+                  </Option>
+                ));
+              })()}
+            </Select>
           </Form.Item>
         </Form>
       </Modal>
