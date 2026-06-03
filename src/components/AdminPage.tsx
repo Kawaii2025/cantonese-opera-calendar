@@ -13,7 +13,8 @@ import {
   Tag,
   Card,
   Typography,
-  Divider
+  Divider,
+  AutoComplete
 } from 'antd';
 import { 
   PlusOutlined, 
@@ -447,22 +448,18 @@ export const AdminPage = () => {
             name="location"
             rules={[{ required: true, message: '请输入场所' }]}
           >
-            <Select 
+            <AutoComplete 
               placeholder="例如：广州大剧院" 
-              showSearch 
               allowClear 
               dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-            >
-              {/* 优先显示历史记录 */}
-              {(() => {
+              options={(() => {
                 const history = getHistory('location');
-                return history.map(location => (
-                  <Option key={`history_${location}`} value={location}>
-                    {location}
-                  </Option>
-                ));
+                return history.map(location => ({
+                  value: location,
+                  label: location
+                }));
               })()}
-            </Select>
+            />
           </Form.Item>
         </Form>
       </Modal>

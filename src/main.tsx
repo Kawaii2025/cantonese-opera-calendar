@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message, Menu } from 'antd';
+import { ConfigProvider, Flex, Tag, Layout, Select, Button, Radio, Modal, Spin, Alert, Form, Input, message, Menu, AutoComplete } from 'antd';
 import zhCN from 'antd/locale/zh_CN';
 import dayjs from 'dayjs';
 import { CustomCalendar } from './components/CustomCalendar';
@@ -652,22 +652,18 @@ if (container) {
               name="location"
               rules={[{ required: true, message: '请输入场所' }]}
             >
-              <Select 
+              <AutoComplete 
                 placeholder="例如：广州大剧院" 
-                showSearch 
                 allowClear 
                 dropdownStyle={{ maxHeight: 400, overflow: 'auto' }}
-              >
-                {/* 优先显示历史记录 */}
-                {(() => {
+                options={(() => {
                   const history = getHistory('location');
-                  return history.map(location => (
-                    <Select.Option key={`history_${location}`} value={location}>
-                      {location}
-                    </Select.Option>
-                  ));
+                  return history.map(location => ({
+                    value: location,
+                    label: location
+                  }));
                 })()}
-              </Select>
+              />
             </Form.Item>
 
             <Form.Item
