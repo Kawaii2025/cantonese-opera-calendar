@@ -140,7 +140,7 @@ if (container) {
     const [events, setEvents] = useState<Event[]>([]);
     const [troupes, setTroupes] = useState<string[]>([]);
     const [cities, setCities] = useState<string[]>([]);
-    const [selectedTroupe, setSelectedTroupe] = useState<string>('');
+    const [selectedTroupes, setSelectedTroupes] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -179,11 +179,11 @@ if (container) {
       fetchMonthData(currentDate);
     }, [currentDate.year(), currentDate.month()]);
 
-    // Filter events by selected troupe
+    // Filter events by selected troupes
     const filteredEvents = useMemo(() => {
-      if (!selectedTroupe) return events;
-      return events.filter(event => event.troupe === selectedTroupe);
-    }, [events, selectedTroupe]);
+      if (selectedTroupes.length === 0) return events;
+      return events.filter(event => selectedTroupes.includes(event.troupe));
+    }, [events, selectedTroupes]);
 
     // 自动添加书名号
     const formatContent = (content: string) => {
@@ -447,11 +447,26 @@ if (container) {
         }}>
           <ExportImage events={events} currentDate={currentDate} />
           <Select
-            style={{ width: 150 }}
+            style={{ width: 250 }}
             placeholder="筛选剧团"
             allowClear
-            value={selectedTroupe}
-            onChange={setSelectedTroupe}
+            mode="multiple"
+            maxTagCount="responsive"
+            value={selectedTroupes}
+            onChange={setSelectedTroupes}
+            tagRender={(props) => {
+              const { label, closable, onClose } = props;
+              return (
+                <Tag 
+                  color={getTroupeColor(label as string)}
+                  closable={closable}
+                  onClose={onClose}
+                  style={{ marginRight: 4 }}
+                >
+                  {label}
+                </Tag>
+              );
+            }}
           >
             {troupes.map(troupe => (
               <Select.Option key={troupe} value={troupe}>
