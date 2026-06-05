@@ -141,6 +141,7 @@ if (container) {
     const [troupes, setTroupes] = useState<string[]>([]);
     const [cities, setCities] = useState<string[]>([]);
     const [selectedTroupes, setSelectedTroupes] = useState<string[]>([]);
+    const [selectedCities, setSelectedCities] = useState<string[]>([]);
     const [selectedDate, setSelectedDate] = useState<dayjs.Dayjs | null>(null);
     const [selectedEvents, setSelectedEvents] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -179,11 +180,20 @@ if (container) {
       fetchMonthData(currentDate);
     }, [currentDate.year(), currentDate.month()]);
 
-    // Filter events by selected troupes
+    // Filter events by selected troupes and cities
     const filteredEvents = useMemo(() => {
-      if (selectedTroupes.length === 0) return events;
-      return events.filter(event => selectedTroupes.includes(event.troupe));
-    }, [events, selectedTroupes]);
+      let result = events;
+      
+      if (selectedTroupes.length > 0) {
+        result = result.filter(event => selectedTroupes.includes(event.troupe));
+      }
+      
+      if (selectedCities.length > 0) {
+        result = result.filter(event => selectedCities.includes(event.city));
+      }
+      
+      return result;
+    }, [events, selectedTroupes, selectedCities]);
 
     // 自动添加书名号
     const formatContent = (content: string) => {
@@ -374,6 +384,22 @@ if (container) {
       };
       return map[troupe] || '';
     };
+    
+    // 获取城市颜色
+    const getCityColor = (city: string) => {
+      const map: Record<string, string> = {
+        广州: 'red',
+        佛山: 'orange',
+        深圳: 'magenta',
+        东莞: 'volcano',
+        茂名: 'gold',
+        湛江: 'green',
+        香港: 'purple',
+        北海: 'cyan',
+        珠海: 'blue',
+      };
+      return map[city] || '';
+    };
 
     const troupeRender = (troupe: string) => {
       const color = getTroupeColor(troupe);
@@ -447,7 +473,7 @@ if (container) {
         }}>
           <ExportImage events={events} currentDate={currentDate} />
           <Select
-            style={{ width: 250 }}
+            style={{ width: 180 }}
             placeholder="筛选剧团"
             allowClear
             mode="multiple"
@@ -482,6 +508,45 @@ if (container) {
                   {troupe}
                 </Tag>
                 {troupe}
+              </Select.Option>
+            ))}
+          </Select>
+          <Select
+            style={{ width: 180 }}
+            placeholder="筛选城市"
+            allowClear
+            mode="multiple"
+            maxTagCount="responsive"
+            value={selectedCities}
+            onChange={setSelectedCities}
+            tagRender={(props) => {
+              const { label, closable, onClose } = props;
+              return (
+                <Tag 
+                  color={getCityColor(label as string)} 
+                  closable={closable}
+                  onClose={onClose}
+                  style={{ marginRight: 4 }}
+                >
+                  {label}
+                </Tag>
+              );
+            }}
+          >
+            {cities.map(city => (
+              <Select.Option key={city} value={city}>
+                <Tag 
+                  color={getCityColor(city)} 
+                  style={{ 
+                    marginRight: 8, 
+                    minWidth: '64px', 
+                    textAlign: 'center',
+                    display: 'inline-block'
+                  }}
+                >
+                  {city}
+                </Tag>
+                {city}
               </Select.Option>
             ))}
           </Select>
