@@ -8,7 +8,7 @@ import { MobileCardView } from './components/MobileCardView';
 import { ExportImage } from './components/ExportImage';
 import { AdminPage } from './components/AdminPage';
 import { usePageScroll } from './hooks/usePageScroll';
-import { api, Event } from './api';
+import { api, Event, Troupe } from './api';
 import { HashRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import './style.css';
 import './styles/custom-calendar.css';
@@ -138,7 +138,7 @@ if (container) {
     const [modalVisible, setModalVisible] = useState(false);
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
     const [events, setEvents] = useState<Event[]>([]);
-    const [troupes, setTroupes] = useState<string[]>([]);
+    const [troupes, setTroupes] = useState<Troupe[]>([]);
     const [cities, setCities] = useState<string[]>([]);
     const [selectedTroupes, setSelectedTroupes] = useState<string[]>([]);
     const [selectedCities, setSelectedCities] = useState<string[]>([]);
@@ -370,20 +370,20 @@ if (container) {
       return <Tag color={color}>{city || ''}</Tag>;
     };
 
-    // 获取剧团颜色
+    // 获取剧团颜色（从动态数据中查找，找不到则使用默认蓝色
     const getTroupeColor = (troupe: string) => {
-      const map: Record<string, string> = {
-        广州团: '#2f54eb',
-        佛山团: '#f5222d',
-        红豆团: '#ff4d4f',
-        省一团: '#faad14',
-        省二团: '#a0d911',
-        深圳团: '#eb2f96',
-        珠海团: '#ffc53d',
-        省院: '#fa541c',
-        大湾区: '#7b189a',
-      };
-      return map[troupe] || '';
+      const troupeObj = troupes.find(t => t.name === troupe);
+      if (troupeObj && troupeObj.color) {
+        return troupeObj.color;
+      }
+      // 如果剧团在动态数据中找不到，尝试在事件自身颜色
+      if (troupe) {
+        const troupeColor = events.find(e => e.troupe === troupe && e.troupe_color);
+        if (troupeColor && troupeColor.troupe_color) {
+          return troupeColor.troupe_color;
+        }
+      }
+      return '#2f54eb';
     };
     
     // 获取城市颜色
@@ -496,9 +496,9 @@ if (container) {
             }}
           >
             {troupes.map(troupe => (
-              <Select.Option key={troupe} value={troupe}>
+              <Select.Option key={troupe.name} value={troupe.name}>
                 <Tag 
-                  color={getTroupeColor(troupe)} 
+                  color={troupe.color} 
                   style={{ 
                     marginRight: 8, 
                     minWidth: '64px', 
@@ -506,9 +506,9 @@ if (container) {
                     display: 'inline-block'
                   }}
                 >
-                  {troupe}
+                  {troupe.name}
                 </Tag>
-                {troupe}
+                {troupe.name}
               </Select.Option>
             ))}
           </Select>
@@ -692,20 +692,23 @@ if (container) {
                 {(() => {
                   const history = getHistory('troupe');
                   const historySet = new Set(history);
-                  const otherTroupes = troupes.filter(t => !historySet.has(t));
+                  const otherTroupes = troupes.filter(t => !historySet.has(t.name));
+                  const historyTroupes = history
+                    .map(name => troupes.find(t => t.name === name))
+                    .filter((t): t is Troupe => !!t);
                   return [
-                    ...history.map(troupe => (
-                      <Select.Option key={`history_${troupe}`} value={troupe}>
-                        <Tag color={getTroupeColor(troupe)} style={{ marginRight: 8 }}>
-                          {troupe}
+                    ...historyTroupes.map(troupe => (
+                      <Select.Option key={`history_${troupe.name}`} value={troupe.name}>
+                        <Tag color={troupe.color} style={{ marginRight: 8 }}>
+                          {troupe.name}
                         </Tag>
                       </Select.Option>
                     )),
 
                     ...otherTroupes.map(troupe => (
-                      <Select.Option key={troupe} value={troupe}>
-                        <Tag color={getTroupeColor(troupe)} style={{ marginRight: 8 }}>
-                          {troupe}
+                      <Select.Option key={troupe.name} value={troupe.name}>
+                        <Tag color={troupe.color} style={{ marginRight: 8 }}>
+                          {troupe.name}
                         </Tag>
                       </Select.Option>
                     )),
