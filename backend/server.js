@@ -56,6 +56,71 @@ app.use((req, res, next) => {
   next();
 });
 
+// 自动检查并添加数据库中缺失的列（向后兼容）
+async function autoMigrate() {
+  // 旧的静态颜色映射（用于迁移时填充已有剧团）
+  const defaultTroupeColors = {
+    '广州团': '#2f54eb',
+    '佛山团': '#f5222d',
+    '红豆团': '#ff4d4f',
+    '省一团': '#faad14',
+    '省二团': '#a0d911',
+    '深圳团': '#eb2f96',
+    '珠海团': '#ffc53d',
+    '省院': '#fa541c',
+    '大湾区': '#7b189a',
+  };
+
+  try {
+    // 1. 检查 troupes.color 列
+    const colorCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'troupes' AND column_name = 'color'
+    `);
+    if (colorCheck.rows.length === 0) {
+      console.log('🔧 [Auto-Migrate] troupes 表缺少 color 列，添加中...');
+      await pool.query(`ALTER TABLE troupes ADD COLUMN color VARCHAR(20) DEFAULT '#2f54eb'`);
+      console.log('✅ [Auto-Migrate] 已添加 color 列');
+    }
+
+    // 2. 为已有剧团填充默认颜色（只更新 color 为默认值或 null 的记录）
+    try {
+      const existingTroupes = await pool.query('SELECT id, name, color FROM troupes');
+      let updatedCount = 0;
+      for (const row of existingTroupes.rows) {
+        const presetColor = defaultTroupeColors[row.name];
+        // 如果该剧团有预设颜色，且当前 color 是默认值或空，则更新
+        if (presetColor && (row.color === '#2f54eb' || !row.color)) {
+          await pool.query('UPDATE troupes SET color = $1 WHERE id = $2', [presetColor, row.id]);
+          updatedCount++;
+        }
+      }
+      if (updatedCount > 0) {
+        console.log(`✅ [Auto-Migrate] 已为 ${updatedCount} 个剧团填充预设颜色`);
+      }
+    } catch (e) {
+      console.log('⚠️ [Auto-Migrate] 跳过颜色填充（可能已是自定义颜色）:', e.message);
+    }
+
+    // 3. 检查 events.details 列
+    const detailsCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'events' AND column_name = 'details'
+    `);
+    if (detailsCheck.rows.length === 0) {
+      console.log('🔧 [Auto-Migrate] events 表缺少 details 列，添加中...');
+      await pool.query(`ALTER TABLE events ADD COLUMN details TEXT`);
+      console.log('✅ [Auto-Migrate] 已添加 details 列');
+    }
+
+    console.log('✅ [Auto-Migrate] 数据库迁移检查完成');
+  } catch (error) {
+    console.error('❌ [Auto-Migrate] 自动迁移失败:', error.message);
+  }
+}
+
 // 公用选择列（ 3NF 联表，返回名字而非 id）
 const eventSelect = `
   SELECT 
@@ -64,6 +129,7 @@ const eventSelect = `
     EXTRACT(EPOCH FROM e.date)::INT AS date_timestamp,
     et.name AS type,
     t.name AS troupe,
+    COALESCE(t.color, '#2f54eb') AS troupe_color,
     c.name AS city,
     l.name AS location,
     e.content,
@@ -346,8 +412,11 @@ app.delete('/api/events/:id', async (req, res) => {
 app.get('/api/troupes', async (req, res) => {
   const endpoint = 'GET /api/troupes';
   try {
-    const result = await pool.query('SELECT name FROM troupes ORDER BY name');
-    const troupes = result.rows.map(row => row.name);
+    const result = await pool.query('SELECT name, color FROM troupes ORDER BY name');
+    const troupes = result.rows.map(row => ({
+      name: row.name,
+      color: row.color || '#2f54eb'
+    }));
     console.log(`✅ ${endpoint} - Returned ${troupes.length} troupes`);
     res.json(troupes);
   } catch (error) {
@@ -374,16 +443,18 @@ app.get('/api/cities', async (req, res) => {
 app.post('/api/troupes', async (req, res) => {
   const endpoint = 'POST /api/troupes';
   try {
-    const { name } = req.body;
+    const { name, color } = req.body;
     if (!name || !name.trim()) {
       console.log(`⚠️ ${endpoint} - Troupe name is required`);
       return res.status(400).json({ error: '剧团名称不能为空', endpoint });
     }
 
     const trimmedName = name.trim();
+    const troupeColor = color || '#2f54eb';
+    
     const result = await pool.query(
-      'INSERT INTO troupes(name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id',
-      [trimmedName]
+      'INSERT INTO troupes(name, color) VALUES ($1, $2) ON CONFLICT (name) DO NOTHING RETURNING id, name, color',
+      [trimmedName, troupeColor]
     );
 
     if (result.rows.length === 0) {
@@ -391,11 +462,87 @@ app.post('/api/troupes', async (req, res) => {
       return res.status(409).json({ error: '该剧团已存在', endpoint });
     }
 
-    console.log(`✅ ${endpoint} - Created troupe: ${trimmedName}`);
-    res.json({ id: result.rows[0].id, name: trimmedName, message: '剧团添加成功' });
+    console.log(`✅ ${endpoint} - Created troupe: ${trimmedName} (${troupeColor})`);
+    res.json({ 
+      id: result.rows[0].id, 
+      name: result.rows[0].name, 
+      color: result.rows[0].color,
+      message: '剧团添加成功' 
+    });
   } catch (error) {
     console.error(`❌ ${endpoint} - Error:`, error);
     res.status(500).json({ error: '添加剧团失败', endpoint });
+  }
+});
+
+// 更新剧团（名称和/或颜色）
+app.put('/api/troupes/:name', async (req, res) => {
+  const endpoint = 'PUT /api/troupes/:name';
+  try {
+    const { name: oldName } = req.params;
+    const { name: newName, color } = req.body;
+
+    // 至少有一个字段要更新
+    if ((!newName || !newName.trim()) && !color) {
+      console.log(`⚠️ ${endpoint} - No fields to update`);
+      return res.status(400).json({ error: '请提供要更新的内容（名称或颜色）', endpoint });
+    }
+
+    const trimmedNewName = newName ? newName.trim() : null;
+
+    // 检查原剧团是否存在
+    const existingResult = await pool.query('SELECT id FROM troupes WHERE name = $1', [oldName]);
+    if (existingResult.rows.length === 0) {
+      console.log(`⚠️ ${endpoint} - Troupe "${oldName}" not found`);
+      return res.status(404).json({ error: '剧团不存在', endpoint });
+    }
+
+    // 如果改了名字，检查新名字是否冲突
+    if (trimmedNewName && trimmedNewName !== oldName) {
+      const conflictResult = await pool.query('SELECT id FROM troupes WHERE name = $1', [trimmedNewName]);
+      if (conflictResult.rows.length > 0) {
+        console.log(`⚠️ ${endpoint} - Troupe name "${trimmedNewName}" already exists`);
+        return res.status(409).json({ error: '新的剧团名称已存在', endpoint });
+      }
+    }
+
+    // 构建更新语句
+    let updateQuery = 'UPDATE troupes SET ';
+    const params = [];
+    let paramIndex = 1;
+
+    if (trimmedNewName) {
+      updateQuery += `name = $${paramIndex}, `;
+      params.push(trimmedNewName);
+      paramIndex++;
+    }
+    if (color) {
+      updateQuery += `color = $${paramIndex}, `;
+      params.push(color);
+      paramIndex++;
+    }
+
+    // 去掉末尾的逗号和空格
+    updateQuery = updateQuery.slice(0, -2);
+    updateQuery += ` WHERE name = $${paramIndex} RETURNING name, color`;
+    params.push(oldName);
+
+    const result = await pool.query(updateQuery, params);
+
+    if (result.rows.length === 0) {
+      console.log(`⚠️ ${endpoint} - Update failed for troupe "${oldName}"`);
+      return res.status(500).json({ error: '更新失败', endpoint });
+    }
+
+    console.log(`✅ ${endpoint} - Updated troupe: ${oldName} -> ${result.rows[0].name} (${result.rows[0].color})`);
+    res.json({ 
+      name: result.rows[0].name, 
+      color: result.rows[0].color,
+      message: '剧团更新成功' 
+    });
+  } catch (error) {
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: '更新剧团失败', endpoint });
   }
 });
 
@@ -437,6 +584,9 @@ app.delete('/api/troupes/:name', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
+// 启动服务器（先执行自动迁移，再启动）
+autoMigrate().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+  });
 });

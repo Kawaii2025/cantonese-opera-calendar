@@ -26,8 +26,7 @@ import {
   TeamOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { api, Event } from '../api';
-import { troupeColors } from '../constants/colors';
+import { api, Event, Troupe } from '../api';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -38,7 +37,7 @@ export const AdminPage = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [form] = Form.useForm();
-  const [troupes, setTroupes] = useState<string[]>([]);
+  const [troupes, setTroupes] = useState<Troupe[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   
@@ -46,6 +45,7 @@ export const AdminPage = () => {
   const [troupeModalVisible, setTroupeModalVisible] = useState(false);
   const [troupeForm] = Form.useForm();
   const [troupeSubmitting, setTroupeSubmitting] = useState(false);
+  const [editingTroupe, setEditingTroupe] = useState<Troupe | null>(null);
 
 
   const fetchAllData = async () => {
@@ -116,23 +116,52 @@ export const AdminPage = () => {
     }
   };
 
+  // 获取剧团颜色（从 troupes state 查找）
+  const getTroupeColor = (name: string): string => {
+    const troupe = troupes.find(t => t.name === name);
+    return troupe?.color || '#2f54eb';
+  };
+
   // 剧团管理：新增剧团
   const handleTroupeAdd = () => {
+    setEditingTroupe(null);
     troupeForm.resetFields();
+    troupeForm.setFieldsValue({ color: '#2f54eb' });
+    setTroupeModalVisible(true);
+  };
+
+  // 剧团管理：编辑剧团
+  const handleTroupeEdit = (troupe: Troupe) => {
+    setEditingTroupe(troupe);
+    troupeForm.setFieldsValue({
+      name: troupe.name,
+      color: troupe.color
+    });
     setTroupeModalVisible(true);
   };
 
   const handleTroupeSubmit = async (values: any) => {
     try {
       setTroupeSubmitting(true);
-      await api.createTroupe(values.name);
-      message.success('剧团添加成功');
+      if (editingTroupe) {
+        // 更新模式
+        await api.updateTroupe(editingTroupe.name, {
+          name: values.name,
+          color: values.color
+        });
+        message.success('剧团更新成功');
+      } else {
+        // 新增模式
+        await api.createTroupe(values.name, values.color);
+        message.success('剧团添加成功');
+      }
       setTroupeModalVisible(false);
+      setEditingTroupe(null);
       troupeForm.resetFields();
       fetchAllData();
     } catch (err: any) {
-      console.error('Failed to create troupe:', err);
-      message.error(err.message || '添加剧团失败');
+      console.error('Failed to submit troupe:', err);
+      message.error(err.message || (editingTroupe ? '更新剧团失败' : '添加剧团失败'));
     } finally {
       setTroupeSubmitting(false);
     }
@@ -273,11 +302,8 @@ export const AdminPage = () => {
       filters: [...new Set(events.map(e => e.troupe))].map(t => ({ text: t, value: t })),
       onFilter: (value: any, record: Event) => record.troupe === value,
       render: (troupe: string) => {
-        const color = troupeColors[troupe as keyof typeof troupeColors];
-        if (color) {
-          return <Tag color={color}>{troupe}</Tag>;
-        }
-        return troupe;
+        const color = getTroupeColor(troupe);
+        return <Tag color={color}>{troupe}</Tag>;
       },
     },
     {
@@ -437,7 +463,7 @@ export const AdminPage = () => {
                         >
                           <div style={{ marginBottom: 8 }}>
                             <Tag 
-                              color={troupeColors[troupe as keyof typeof troupeColors]} 
+                              color={troupe.color} 
                               style={{ 
                                 minWidth: '80px',
                                 textAlign: 'center',
@@ -445,7 +471,7 @@ export const AdminPage = () => {
                                 padding: '4px 16px',
                               }}
                             >
-                              {troupe}
+                              {troupe.name}
                             </Tag>
                           </div>
                           <div style={{ 
@@ -453,25 +479,35 @@ export const AdminPage = () => {
                             fontWeight: 'bold',
                             marginBottom: 12,
                           }}>
-                            {troupe}
+                            {troupe.name}
                           </div>
-                          <Popconfirm
-                            title="确认删除"
-                            description="确定要删除这个剧团吗？如果剧团已被使用则无法删除。"
-                            onConfirm={() => handleTroupeDelete(troupe)}
-                            okText="确定"
-                            cancelText="取消"
-                            okButtonProps={{ loading: troupeSubmitting }}
-                          >
+                          <Space size="small">
                             <Button 
                               type="link" 
-                              danger 
-                              icon={<DeleteOutlined />}
+                              icon={<EditOutlined />}
                               size="small"
+                              onClick={() => handleTroupeEdit(troupe)}
                             >
-                              删除
+                              编辑
                             </Button>
-                          </Popconfirm>
+                            <Popconfirm
+                              title="确认删除"
+                              description="确定要删除这个剧团吗？如果剧团已被使用则无法删除。"
+                              onConfirm={() => handleTroupeDelete(troupe.name)}
+                              okText="确定"
+                              cancelText="取消"
+                              okButtonProps={{ loading: troupeSubmitting }}
+                            >
+                              <Button 
+                                type="link" 
+                                danger 
+                                icon={<DeleteOutlined />}
+                                size="small"
+                              >
+                                删除
+                              </Button>
+                            </Popconfirm>
+                          </Space>
                         </Card>
                       </List.Item>
                     )}
@@ -554,20 +590,24 @@ export const AdminPage = () => {
               {(() => {
                 const history = getHistory('troupe');
                 const historySet = new Set(history);
-                const otherTroupes = troupes.filter(t => !historySet.has(t));
+                const otherTroupes = troupes.filter(t => !historySet.has(t.name));
+                // 先从 troupes 中找到有历史记录的
+                const historyTroupes = history
+                  .map(name => troupes.find(t => t.name === name))
+                  .filter((t): t is Troupe => !!t);
                 return [
-                  ...history.map(troupe => (
-                    <Option key={`history_${troupe}`} value={troupe}>
-                      <Tag color={troupeColors[troupe as keyof typeof troupeColors]} style={{ marginRight: 8 }}>
-                        {troupe}
+                  ...historyTroupes.map(troupe => (
+                    <Option key={`history_${troupe.name}`} value={troupe.name}>
+                      <Tag color={troupe.color} style={{ marginRight: 8 }}>
+                        {troupe.name}
                       </Tag>
                     </Option>
                   )),
 
                   ...otherTroupes.map(troupe => (
-                    <Option key={troupe} value={troupe}>
-                      <Tag color={troupeColors[troupe as keyof typeof troupeColors]} style={{ marginRight: 8 }}>
-                        {troupe}
+                    <Option key={troupe.name} value={troupe.name}>
+                      <Tag color={troupe.color} style={{ marginRight: 8 }}>
+                        {troupe.name}
                       </Tag>
                     </Option>
                   )),
@@ -637,17 +677,19 @@ export const AdminPage = () => {
         </Form>
       </Modal>
 
-      {/* 添加剧团的 Modal */}
+      {/* 添加/编辑剧团的 Modal */}
       <Modal
-        title="添加剧团"
+        title={editingTroupe ? '编辑剧团' : '添加剧团'}
         open={troupeModalVisible}
         onCancel={() => {
           setTroupeModalVisible(false);
+          setEditingTroupe(null);
           troupeForm.resetFields();
         }}
         footer={[
           <Button key="cancel" onClick={() => {
             setTroupeModalVisible(false);
+            setEditingTroupe(null);
             troupeForm.resetFields();
           }}>
             取消
@@ -658,7 +700,7 @@ export const AdminPage = () => {
             loading={troupeSubmitting} 
             onClick={() => troupeForm.submit()}
           >
-            添加
+            {editingTroupe ? '保存' : '添加'}
           </Button>,
         ]}
         width={500}
@@ -678,6 +720,53 @@ export const AdminPage = () => {
             ]}
           >
             <Input placeholder="例如：广州团、佛山团" />
+          </Form.Item>
+          <Form.Item
+            label="剧团颜色"
+            name="color"
+            rules={[{ required: true, message: '请选择颜色' }]}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                '#2f54eb', // 蓝色
+                '#f5222d', // 红色
+                '#52c41a', // 绿色
+                '#faad14', // 金色
+                '#eb2f96', // 品红
+                '#722ed1', // 紫色
+                '#13c2c2', // 青色
+                '#fa541c', // 橙色
+                '#ffc53d', // 金黄
+                '#7b189a', // 深紫
+                '#ff4d4f', // 珊瑚红
+                '#40b0ff', // 亮蓝
+              ].map(color => (
+                <Form.Item name="color" noStyle key={color}>
+                  <div
+                    onClick={() => troupeForm.setFieldValue('color', color)}
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: 4,
+                      backgroundColor: color,
+                      cursor: 'pointer',
+                      border: '2px solid ' + (troupeForm.getFieldValue('color') === color ? '#000' : 'transparent'),
+                      display: 'inline-block',
+                      transition: 'border-color 0.2s',
+                    }}
+                    title={color}
+                  />
+                </Form.Item>
+              ))}
+              <Form.Item name="color" noStyle>
+                <Input
+                  style={{ width: 100 }}
+                  placeholder="#2f54eb"
+                  prefix={<div style={{ width: 16, height: 16, borderRadius: 2, backgroundColor: troupeForm.getFieldValue('color') || '#2f54eb' }} />}
+                  onChange={(e) => troupeForm.setFieldValue('color', e.target.value)}
+                />
+              </Form.Item>
+            </div>
           </Form.Item>
         </Form>
       </Modal>

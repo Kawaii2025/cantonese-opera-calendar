@@ -16,7 +16,8 @@ const createTableSQL = `
 
   CREATE TABLE troupes (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE
+    name VARCHAR(100) NOT NULL UNIQUE,
+    color VARCHAR(20) DEFAULT '#2f54eb'
   );
 
   CREATE TABLE cities (

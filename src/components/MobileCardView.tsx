@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 import { Event } from '../api';
-import { cityColors, troupeColors } from '../constants/colors';
+import { cityColors } from '../constants/colors';
 import '../styles/mobile-card-view.css';
 
 dayjs.extend(isSameOrAfter);
@@ -29,6 +29,17 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
   const year = currentDate.year();
   const month = currentDate.month() + 1;
   const daysInMonth = dayjs(`${year}-${month}-01`).daysInMonth();
+
+  // 构建剧团-颜色映射（从 event 的 troupe_color 字段提取）
+  const troupeColorMap = useMemo(() => {
+    const colorMap = new Map<string, string>();
+    for (const event of events) {
+      if (event.troupe_color && !colorMap.has(event.troupe)) {
+        colorMap.set(event.troupe, event.troupe_color);
+      }
+    }
+    return colorMap;
+  }, [events]);
 
   // 获取所有剧团列表
   const troupeList = useMemo(() => {
@@ -89,7 +100,7 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
           全部
         </button>
         {troupeList.map((troupe) => {
-          const troupeColor = troupeColors[troupe] || '#262626';
+          const troupeColor = troupeColorMap.get(troupe) || '#2f54eb';
           return (
             <button
               key={troupe}
@@ -178,7 +189,7 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
                 {dayEvents.map((event, idx) => {
                   const isAfternoon = event.type === 'afternoon';
                   const timeLabel = isAfternoon ? '下午场' : '晚场';
-                  const troupeColor = troupeColors[event.troupe] || '#262626';
+                  const troupeColor = event.troupe_color || troupeColorMap.get(event.troupe) || '#2f54eb';
                   const cityColor = cityColors[event.city] || '';
 
                   const content = event.content.startsWith('《') && event.content.endsWith('》')

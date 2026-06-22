@@ -8,12 +8,18 @@ export interface Event {
   date_timestamp?: number;
   type?: string;
   troupe: string;
+  troupe_color?: string;
   city: string;
   location: string;
   content: string;
   details?: string;
   created_at?: string;
   created_at_timestamp?: number;
+}
+
+export interface Troupe {
+  name: string;
+  color: string;
 }
 
 export const api = {
@@ -84,22 +90,36 @@ export const api = {
   },
 
   // 获取所有剧团
-  async getTroupes(): Promise<string[]> {
+  async getTroupes(): Promise<Troupe[]> {
     const response = await fetch(`${API_BASE_URL}/api/troupes`);
     if (!response.ok) throw new Error('Failed to fetch troupes');
     return response.json();
   },
 
   // 新增剧团
-  async createTroupe(name: string): Promise<{ id: string | number; name: string; message: string }> {
+  async createTroupe(name: string, color?: string): Promise<{ id: string | number; name: string; color: string; message: string }> {
     const response = await fetch(`${API_BASE_URL}/api/troupes`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name, color: color || '#2f54eb' }),
     });
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: '添加剧团失败' }));
       throw new Error(error.error || '添加剧团失败');
+    }
+    return response.json();
+  },
+
+  // 更新剧团
+  async updateTroupe(oldName: string, params: { name?: string; color?: string }): Promise<{ name: string; color: string; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/troupes/${encodeURIComponent(oldName)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: '更新剧团失败' }));
+      throw new Error(error.error || '更新剧团失败');
     }
     return response.json();
   },
