@@ -71,6 +71,7 @@ async function setupAndSeed() {
         city_id INTEGER NOT NULL REFERENCES cities(id) ON DELETE RESTRICT,
         location_id INTEGER NOT NULL REFERENCES locations(id) ON DELETE RESTRICT,
         content VARCHAR(500) NOT NULL,
+        details TEXT,
         created_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP AT TIME ZONE 'Asia/Shanghai'),
         CONSTRAINT check_date_range CHECK (date >= '2025-01-01' AND date <= '2025-12-31'),
         CONSTRAINT check_content_not_empty CHECK (content <> ''),
@@ -86,7 +87,7 @@ async function setupAndSeed() {
     
     // 插入数据 - 异步分片插入
     console.log('📝 插入演出数据...');
-    const insertSQL = 'INSERT INTO events (date, type_id, troupe_id, city_id, location_id, content) VALUES ($1, $2, $3, $4, $5, $6)';
+    const insertSQL = 'INSERT INTO events (date, type_id, troupe_id, city_id, location_id, content, details) VALUES ($1, $2, $3, $4, $5, $6, $7)';
     
     // 预处理：提取维度去重
     const allEvents = [];
@@ -103,7 +104,8 @@ async function setupAndSeed() {
           troupe: event.troupe,
           city: event.city,
           location: event.location,
-          content: event.content
+          content: event.content,
+          details: event.details || null
         });
         typeSet.add(event.type || '演出');
         troupeSet.add(event.troupe);
@@ -183,7 +185,8 @@ async function setupAndSeed() {
           troupeId,
           cityId,
           locationId,
-          event.content
+          event.content,
+          event.details
         ]).catch(error => {
           console.error(`❌ 插入失败 [${event.date} - ${event.troupe}]:`, error.message);
           throw error;

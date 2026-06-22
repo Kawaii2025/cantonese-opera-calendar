@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "build": "echo 'Build completed!'",
+    "build": "echo 'Bud completed!'",
     "migrate": "node migrate.js",
+    "add-details": "node add-details-column.js",
     "seed": "node seed.js",
     "test-connection": "node test-connection.js",
     "init": "node init.js",

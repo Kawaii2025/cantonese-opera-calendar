@@ -67,6 +67,7 @@ const eventSelect = `
     c.name AS city,
     l.name AS location,
     e.content,
+    e.details,
     e.created_at AT TIME ZONE 'Asia/Shanghai' AS created_at,
     EXTRACT(EPOCH FROM e.created_at AT TIME ZONE 'Asia/Shanghai')::INT AS created_at_timestamp
   FROM events e
@@ -246,7 +247,7 @@ app.get('/api/events/by-month/:yearMonth', async (req, res) => {
 app.post('/api/events', async (req, res) => {
   const endpoint = 'POST /api/events';
   try {
-    const { date, type, troupe, city, location, content } = req.body;
+    const { date, type, troupe, city, location, content, details } = req.body;
     
     // Reject array values
     if (Array.isArray(troupe)) {
@@ -266,8 +267,8 @@ app.post('/api/events', async (req, res) => {
     const { typeId, troupeId, cityId, locationId } = await resolveIds({ type, troupe, city, location });
     
     const result = await pool.query(
-      'INSERT INTO events (date, type_id, troupe_id, city_id, location_id, content) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id',
-      [date, typeId, troupeId, cityId, locationId, content]
+      'INSERT INTO events (date, type_id, troupe_id, city_id, location_id, content, details) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id',
+      [date, typeId, troupeId, cityId, locationId, content, details || null]
     );
     
     console.log(`✅ ${endpoint} - Created event ID: ${result.rows[0].id}`);
@@ -283,7 +284,7 @@ app.put('/api/events/:id', async (req, res) => {
   const endpoint = 'PUT /api/events/:id';
   try {
     const { id } = req.params;
-    const { date, type, troupe, city, location, content } = req.body;
+    const { date, type, troupe, city, location, content, details } = req.body;
     
     // Reject array values
     if (Array.isArray(troupe)) {
@@ -303,8 +304,8 @@ app.put('/api/events/:id', async (req, res) => {
     const { typeId, troupeId, cityId, locationId } = await resolveIds({ type, troupe, city, location });
     
     const result = await pool.query(
-      'UPDATE events SET date = $1, type_id = $2, troupe_id = $3, city_id = $4, location_id = $5, content = $6 WHERE id = $7',
-      [date, typeId, troupeId, cityId, locationId, content, id]
+      'UPDATE events SET date = $1, type_id = $2, troupe_id = $3, city_id = $4, location_id = $5, content = $6, details = $7 WHERE id = $8',
+      [date, typeId, troupeId, cityId, locationId, content, details || null, id]
     );
     
     if (result.rowCount === 0) {
@@ -366,6 +367,73 @@ app.get('/api/cities', async (req, res) => {
   } catch (error) {
     console.error(`❌ ${endpoint} - Error:`, error);
     res.status(500).json({ error: 'Failed to fetch cities', endpoint });
+  }
+});
+
+// 新增剧团
+app.post('/api/troupes', async (req, res) => {
+  const endpoint = 'POST /api/troupes';
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) {
+      console.log(`⚠️ ${endpoint} - Troupe name is required`);
+      return res.status(400).json({ error: '剧团名称不能为空', endpoint });
+    }
+
+    const trimmedName = name.trim();
+    const result = await pool.query(
+      'INSERT INTO troupes(name) VALUES ($1) ON CONFLICT (name) DO NOTHING RETURNING id',
+      [trimmedName]
+    );
+
+    if (result.rows.length === 0) {
+      console.log(`⚠️ ${endpoint} - Troupe "${trimmedName}" already exists`);
+      return res.status(409).json({ error: '该剧团已存在', endpoint });
+    }
+
+    console.log(`✅ ${endpoint} - Created troupe: ${trimmedName}`);
+    res.json({ id: result.rows[0].id, name: trimmedName, message: '剧团添加成功' });
+  } catch (error) {
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: '添加剧团失败', endpoint });
+  }
+});
+
+// 删除剧团
+app.delete('/api/troupes/:name', async (req, res) => {
+  const endpoint = 'DELETE /api/troupes/:name';
+  try {
+    const { name } = req.params;
+
+    // 检查是否有演出使用这个剧团
+    const usageResult = await pool.query(
+      `SELECT COUNT(*) as count FROM events e
+       JOIN troupes t ON e.troupe_id = t.id
+       WHERE t.name = $1`,
+      [name]
+    );
+
+    const usageCount = parseInt(usageResult.rows[0].count);
+    if (usageCount > 0) {
+      console.log(`⚠️ ${endpoint} - Troupe "${name}" is used by ${usageCount} events`);
+      return res.status(400).json({ 
+        error: `该剧团已被 ${usageCount} 场演出使用，无法删除`, 
+        endpoint 
+      });
+    }
+
+    const result = await pool.query('DELETE FROM troupes WHERE name = $1', [name]);
+    
+    if (result.rowCount === 0) {
+      console.log(`⚠️ ${endpoint} - Troupe "${name}" not found`);
+      return res.status(404).json({ error: '剧团不存在', endpoint });
+    }
+
+    console.log(`✅ ${endpoint} - Deleted troupe: ${name}`);
+    res.json({ message: '剧团删除成功' });
+  } catch (error) {
+    console.error(`❌ ${endpoint} - Error:`, error);
+    res.status(500).json({ error: '删除剧团失败', endpoint });
   }
 });
 

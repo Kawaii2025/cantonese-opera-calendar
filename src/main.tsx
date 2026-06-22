@@ -257,6 +257,7 @@ if (container) {
           city: values.city,
           location: values.location,
           content: formatContent(values.content),
+          details: values.details || '',
           type: values.type || 'evening',
         };
         
@@ -622,6 +623,20 @@ if (container) {
                   <div className="modal-event-content">
                     <strong>{content}</strong>
                   </div>
+                  {item.details && (
+                    <div className="modal-event-details" style={{ 
+                      marginTop: 8, 
+                      padding: '8px 12px', 
+                      backgroundColor: '#fafafa', 
+                      borderRadius: 4,
+                      color: '#666',
+                      fontSize: 14,
+                      lineHeight: 1.6,
+                      whiteSpace: 'pre-wrap'
+                    }}>
+                      {item.details}
+                    </div>
+                  )}
                   {item.type && (
                     <div className="modal-event-time">
                       {item.type === 'afternoon' ? '下午场' : '晚场'}
@@ -743,6 +758,18 @@ if (container) {
                     label: location
                   }));
                 })()}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="演出详情"
+              name="details"
+              tooltip="可选：剧情简介、演员阵容、折子戏剧目等"
+            >
+              <Input.TextArea 
+                placeholder="例如：《帝女花》- 粤剧经典剧目，主演：XXX、XXX" 
+                rows={3}
+                autoSize={{ minRows: 2, maxRows: 6 }}
               />
             </Form.Item>
 

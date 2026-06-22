@@ -14,13 +14,16 @@ import {
   Card,
   Typography,
   Divider,
-  AutoComplete
+  AutoComplete,
+  Tabs,
+  List
 } from 'antd';
 import { 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined, 
-  CalendarOutlined 
+  CalendarOutlined,
+  TeamOutlined
 } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { api, Event } from '../api';
@@ -38,6 +41,12 @@ export const AdminPage = () => {
   const [troupes, setTroupes] = useState<string[]>([]);
   const [cities, setCities] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  
+  // 剧团管理 state
+  const [troupeModalVisible, setTroupeModalVisible] = useState(false);
+  const [troupeForm] = Form.useForm();
+  const [troupeSubmitting, setTroupeSubmitting] = useState(false);
+
 
   const fetchAllData = async () => {
     try {
@@ -107,6 +116,42 @@ export const AdminPage = () => {
     }
   };
 
+  // 剧团管理：新增剧团
+  const handleTroupeAdd = () => {
+    troupeForm.resetFields();
+    setTroupeModalVisible(true);
+  };
+
+  const handleTroupeSubmit = async (values: any) => {
+    try {
+      setTroupeSubmitting(true);
+      await api.createTroupe(values.name);
+      message.success('剧团添加成功');
+      setTroupeModalVisible(false);
+      troupeForm.resetFields();
+      fetchAllData();
+    } catch (err: any) {
+      console.error('Failed to create troupe:', err);
+      message.error(err.message || '添加剧团失败');
+    } finally {
+      setTroupeSubmitting(false);
+    }
+  };
+
+  const handleTroupeDelete = async (name: string) => {
+    try {
+      setTroupeSubmitting(true);
+      await api.deleteTroupe(name);
+      message.success('剧团删除成功');
+      fetchAllData();
+    } catch (err: any) {
+      console.error('Failed to delete troupe:', err);
+      message.error(err.message || '删除剧团失败');
+    } finally {
+      setTroupeSubmitting(false);
+    }
+  };
+
   // 自动添加书名号
   const formatContent = (content: string) => {
     if (!content) return content;
@@ -167,6 +212,7 @@ export const AdminPage = () => {
         city: values.city,
         location: values.location,
         content: formatContent(values.content),
+        details: values.details || '',
       };
 
       if (editingEvent && editingEvent.id) {
@@ -256,6 +302,26 @@ export const AdminPage = () => {
           : `《${content}》`,
     },
     {
+      title: '演出详情',
+      dataIndex: 'details',
+      key: 'details',
+      render: (details: string) => details ? (
+        <div style={{ 
+          maxWidth: 300, 
+          color: '#666', 
+          fontSize: 13,
+          whiteSpace: 'pre-wrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical'
+        }}>
+          {details}
+        </div>
+      ) : <span style={{ color: '#ccc' }}>—</span>,
+    },
+    {
       title: '操作',
       key: 'actions',
       render: (_: any, record: Event) => (
@@ -291,34 +357,129 @@ export const AdminPage = () => {
   return (
     <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
       <Card>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <Title level={2} style={{ margin: 0 }}>
-            <CalendarOutlined style={{ marginRight: 8 }} />
-            粤剧演出管理后台
-          </Title>
-          <Button 
-            type="primary" 
-            icon={<PlusOutlined />} 
-            onClick={handleAdd}
-            size="large"
-          >
-            添加演出
-          </Button>
-        </div>
+        <Title level={2} style={{ margin: 0, marginBottom: 16 }}>
+          <CalendarOutlined style={{ marginRight: 8 }} />
+          粤剧演出管理后台
+        </Title>
 
         <Divider />
 
-        <Table
-          columns={columns}
-          dataSource={events}
-          rowKey="id"
-          loading={loading}
-          pagination={{
-            pageSize: 20,
-            showSizeChanger: true,
-            showTotal: (total) => `共 ${total} 条记录`,
-          }}
-          scroll={{ x: 1000 }}
+        <Tabs
+          defaultActiveKey="events"
+          items={[
+            {
+              key: 'events',
+              label: (
+                <span>
+                  <CalendarOutlined style={{ marginRight: 8 }} />
+                  演出管理
+                </span>
+              ),
+              children: (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                    <Button 
+                      type="primary" 
+                      icon={<PlusOutlined />} 
+                      onClick={handleAdd}
+                      size="large"
+                    >
+                      添加演出
+                    </Button>
+                  </div>
+                  <Table
+                    columns={columns}
+                    dataSource={events}
+                    rowKey="id"
+                    loading={loading}
+                    pagination={{
+                      pageSize: 20,
+                      showSizeChanger: true,
+                      showTotal: (total) => `共 ${total} 条记录`,
+                    }}
+                    scroll={{ x: 1000 }}
+                  />
+                </>
+              ),
+            },
+            {
+              key: 'troupes',
+              label: (
+                <span>
+                  <TeamOutlined style={{ marginRight: 8 }} />
+                  剧团管理
+                </span>
+              ),
+              children: (
+                <>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
+                    <Button 
+                      type="primary" 
+                      icon={<PlusOutlined />} 
+                      onClick={handleTroupeAdd}
+                      size="large"
+                    >
+                      添加剧团
+                    </Button>
+                  </div>
+                  <List
+                    grid={{ gutter: 16, xs: 1, sm: 2, md: 3, lg: 3, xl: 4, xxl: 4 }}
+                    dataSource={troupes}
+                    loading={loading}
+                    locale={{ emptyText: '暂无剧团数据' }}
+                    renderItem={(troupe) => (
+                      <List.Item>
+                        <Card
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center',
+                          }}
+                        >
+                          <div style={{ marginBottom: 8 }}>
+                            <Tag 
+                              color={troupeColors[troupe as keyof typeof troupeColors]} 
+                              style={{ 
+                                minWidth: '80px',
+                                textAlign: 'center',
+                                fontSize: '16px',
+                                padding: '4px 16px',
+                              }}
+                            >
+                              {troupe}
+                            </Tag>
+                          </div>
+                          <div style={{ 
+                            fontSize: '18px', 
+                            fontWeight: 'bold',
+                            marginBottom: 12,
+                          }}>
+                            {troupe}
+                          </div>
+                          <Popconfirm
+                            title="确认删除"
+                            description="确定要删除这个剧团吗？如果剧团已被使用则无法删除。"
+                            onConfirm={() => handleTroupeDelete(troupe)}
+                            okText="确定"
+                            cancelText="取消"
+                            okButtonProps={{ loading: troupeSubmitting }}
+                          >
+                            <Button 
+                              type="link" 
+                              danger 
+                              icon={<DeleteOutlined />}
+                              size="small"
+                            >
+                              删除
+                            </Button>
+                          </Popconfirm>
+                        </Card>
+                      </List.Item>
+                    )}
+                  />
+                </>
+              ),
+            },
+          ]}
         />
       </Card>
 
@@ -460,6 +621,63 @@ export const AdminPage = () => {
                 }));
               })()}
             />
+          </Form.Item>
+
+          <Form.Item
+            label="演出详情"
+            name="details"
+            tooltip="可选：剧情简介、演员阵容、折子戏剧目等"
+          >
+            <Input.TextArea 
+              placeholder="例如：《帝女花》- 粤剧经典剧目，主演：XXX、XXX" 
+              rows={3}
+              autoSize={{ minRows: 2, maxRows: 6 }}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 添加剧团的 Modal */}
+      <Modal
+        title="添加剧团"
+        open={troupeModalVisible}
+        onCancel={() => {
+          setTroupeModalVisible(false);
+          troupeForm.resetFields();
+        }}
+        footer={[
+          <Button key="cancel" onClick={() => {
+            setTroupeModalVisible(false);
+            troupeForm.resetFields();
+          }}>
+            取消
+          </Button>,
+          <Button 
+            key="submit" 
+            type="primary" 
+            loading={troupeSubmitting} 
+            onClick={() => troupeForm.submit()}
+          >
+            添加
+          </Button>,
+        ]}
+        width={500}
+      >
+        <Form
+          form={troupeForm}
+          layout="vertical"
+          onFinish={handleTroupeSubmit}
+          style={{ marginTop: 16 }}
+        >
+          <Form.Item
+            label="剧团名称"
+            name="name"
+            rules={[
+              { required: true, message: '请输入剧团名称' },
+              { max: 100, message: '剧团名称不能超过100个字符' },
+            ]}
+          >
+            <Input placeholder="例如：广州团、佛山团" />
           </Form.Item>
         </Form>
       </Modal>

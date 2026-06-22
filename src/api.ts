@@ -11,6 +11,7 @@ export interface Event {
   city: string;
   location: string;
   content: string;
+  details?: string;
   created_at?: string;
   created_at_timestamp?: number;
 }
@@ -82,14 +83,40 @@ export const api = {
     return response.json();
   },
 
-  // 获取剧团列表
+  // 获取所有剧团
   async getTroupes(): Promise<string[]> {
     const response = await fetch(`${API_BASE_URL}/api/troupes`);
     if (!response.ok) throw new Error('Failed to fetch troupes');
     return response.json();
   },
 
-  // 获取城市列表
+  // 新增剧团
+  async createTroupe(name: string): Promise<{ id: string | number; name: string; message: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/troupes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name }),
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: '添加剧团失败' }));
+      throw new Error(error.error || '添加剧团失败');
+    }
+    return response.json();
+  },
+
+  // 删除剧团
+  async deleteTroupe(name: string): Promise<{ message: string }> {
+    const response = await fetch(`${API_BASE_URL}/api/troupes/${encodeURIComponent(name)}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: '删除剧团失败' }));
+      throw new Error(error.error || '删除剧团失败');
+    }
+    return response.json();
+  },
+
+  // 获取所有城市
   async getCities(): Promise<string[]> {
     const response = await fetch(`${API_BASE_URL}/api/cities`);
     if (!response.ok) throw new Error('Failed to fetch cities');
