@@ -154,6 +154,7 @@ if (container) {
     const troupeSelectRef = useRef<any>(null);
     const citySelectRef = useRef<any>(null);
     const typeSelectRef = useRef<any>(null);
+    const locationSelectRef = useRef<any>(null);
 
     // Fetch events for the current month
     const fetchMonthData = async (date: dayjs.Dayjs) => {
@@ -784,6 +785,12 @@ if (container) {
                     label: location
                   }));
                 })()}
+                ref={locationSelectRef}
+                onSelect={() => {
+                  setTimeout(() => {
+                    locationSelectRef.current?.blur();
+                  }, 100);
+                }}
               />
             </Form.Item>
 
