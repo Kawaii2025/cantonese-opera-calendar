@@ -151,6 +151,9 @@ if (container) {
     const [editForm] = Form.useForm();
     const [submitting, setSubmitting] = useState(false);
     const lastClickRef = useRef<{ date: string; time: number } | null>(null);
+    const troupeSelectRef = useRef<any>(null);
+    const citySelectRef = useRef<any>(null);
+    const typeSelectRef = useRef<any>(null);
 
     // Fetch events for the current month
     const fetchMonthData = async (date: dayjs.Dayjs) => {
@@ -687,7 +690,17 @@ if (container) {
               name="troupe"
               rules={[{ required: true, message: '请选择剧团' }]}
             >
-              <Select placeholder="请选择剧团" showSearch allowClear>
+              <Select 
+                placeholder="请选择剧团" 
+                showSearch 
+                allowClear
+                ref={troupeSelectRef}
+                onChange={() => {
+                  setTimeout(() => {
+                    troupeSelectRef.current?.blur();
+                  }, 100);
+                }}
+              >
                 {/* 优先显示历史记录 */}
                 {(() => {
                   const history = getHistory('troupe');
@@ -722,7 +735,17 @@ if (container) {
               name="city"
               rules={[{ required: true, message: '请选择城市' }]}
             >
-              <Select placeholder="请选择城市" showSearch allowClear>
+              <Select 
+                placeholder="请选择城市" 
+                showSearch 
+                allowClear
+                ref={citySelectRef}
+                onChange={() => {
+                  setTimeout(() => {
+                    citySelectRef.current?.blur();
+                  }, 100);
+                }}
+              >
                 {/* 优先显示历史记录 */}
                 {(() => {
                   const history = getHistory('city');
@@ -785,6 +808,12 @@ if (container) {
                   { label: '下午场', value: 'afternoon' },
                   { label: '晚场', value: 'evening' },
                 ]}
+                ref={typeSelectRef}
+                onChange={() => {
+                  setTimeout(() => {
+                    typeSelectRef.current?.blur();
+                  }, 100);
+                }}
               />
             </Form.Item>
           </Form>
