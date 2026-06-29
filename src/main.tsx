@@ -37,6 +37,8 @@ if (container) {
     setCurrentDate: (date: dayjs.Dayjs) => void;
   }) => {
     const location = useLocation();
+    const yearSelectRef = useRef<any>(null);
+    const monthSelectRef = useRef<any>(null);
     
     const year = currentDate.year();
     const month = currentDate.month();
@@ -76,14 +78,26 @@ if (container) {
                 <Select
                   value={year}
                   options={yearOptions}
-                  onChange={(newYear) => setCurrentDate(currentDate.year(newYear))}
+                  onChange={(newYear) => {
+                    setCurrentDate(currentDate.year(newYear));
+                    setTimeout(() => {
+                      yearSelectRef.current?.blur();
+                    }, 100);
+                  }}
                   style={{ width: 100 }}
+                  ref={yearSelectRef}
                 />
                 <Select
                   value={month}
                   options={monthOptions}
-                  onChange={(newMonth) => setCurrentDate(currentDate.month(newMonth))}
+                  onChange={(newMonth) => {
+                    setCurrentDate(currentDate.month(newMonth));
+                    setTimeout(() => {
+                      monthSelectRef.current?.blur();
+                    }, 100);
+                  }}
                   style={{ width: 80 }}
+                  ref={monthSelectRef}
                 />
               </>
             )}
