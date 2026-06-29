@@ -124,7 +124,10 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
           <select
             id="start-day"
             value={startDay === null ? '' : startDay}
-            onChange={(e) => setStartDay(e.target.value ? parseInt(e.target.value) : null)}
+            onChange={(e) => {
+              setStartDay(e.target.value ? parseInt(e.target.value) : null);
+              e.target.blur();
+            }}
           >
             <option value="">全部</option>
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => (
@@ -139,7 +142,10 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
           <select
             id="end-day"
             value={endDay === null ? '' : endDay}
-            onChange={(e) => setEndDay(e.target.value ? parseInt(e.target.value) : null)}
+            onChange={(e) => {
+              setEndDay(e.target.value ? parseInt(e.target.value) : null);
+              e.target.blur();
+            }}
           >
             <option value="">全部</option>
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => (
