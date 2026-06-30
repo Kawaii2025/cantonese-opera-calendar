@@ -449,12 +449,17 @@ if (container) {
               {troupeRender(item.troupe)}
               {locationRender(item.location)}
               {isAfternoon && (
-                <Tag color="orange" style={{ fontSize: '10px', padding: '0 4px' }}>
+                <Tag color="#1890ff" style={{ fontSize: '10px', padding: '0 4px' }}>
                   下午场
                 </Tag>
               )}
             </Flex>
-            <span className="item-content item-play-name">{content}</span>
+            <span 
+              className="item-content item-play-name"
+              style={isAfternoon ? { color: '#1890ff' } : {}}
+            >
+              {content}
+            </span>
           </li>
         );
       };
@@ -644,7 +649,7 @@ if (container) {
                       {cityRender(item.city)}
                       {locationRender(item.location)}
                       {item.type === 'afternoon' && (
-                        <Tag color="orange">下午场</Tag>
+                        <Tag color="#1890ff">下午场</Tag>
                       )}
                     </Flex>
                   </div>

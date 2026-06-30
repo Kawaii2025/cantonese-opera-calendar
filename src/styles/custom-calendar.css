@@ -53,6 +53,22 @@
   color: #bfbfbf;
 }
 
+.calendar-cell.weekend {
+  background-color: #fff7e6;
+}
+
+.calendar-cell.weekend:hover {
+  background-color: #ffe4c4;
+}
+
+.calendar-cell.weekend.today {
+  background-color: #fff0e6;
+}
+
+.calendar-cell.weekend.selected {
+  background-color: #ffd591;
+}
+
 .cell-date {
   font-weight: 600;
   font-size: 14px;

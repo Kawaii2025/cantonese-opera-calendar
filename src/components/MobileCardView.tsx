@@ -239,7 +239,7 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
                           {isAfternoon && (
                             <span 
                               style={{ 
-                                backgroundColor: '#fa8c16',
+                                backgroundColor: '#1890ff',
                                 color: 'white',
                                 padding: '4px 8px',
                                 borderRadius: '2px',
@@ -255,7 +255,7 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
                       </div>
 
                       <div className="card-content">
-                        <p className="play-name">{content}</p>
+                        <p className="play-name" style={isAfternoon ? { color: '#1890ff' } : {}}>{content}</p>
                         <p className="location">
                           <span className="location-icon">📍</span>
                           {event.location}

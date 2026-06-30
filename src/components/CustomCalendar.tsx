@@ -89,13 +89,15 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
 
           const isToday = date.isSame(dayjs(), 'day');
           const isSelected = date.isSame(value, 'day');
+          const dayOfWeek = date.day();
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
 
           return (
             <div
               key={`day-${index}`}
               className={`calendar-cell ${!isCurrentMonth ? 'other-month' : ''} ${
                 isToday ? 'today' : ''
-              } ${isSelected ? 'selected' : ''}`}
+              } ${isSelected ? 'selected' : ''} ${isWeekend ? 'weekend' : ''}`}
               onClick={() => {
                 onChange(date);
                 onCellClick?.(date);
