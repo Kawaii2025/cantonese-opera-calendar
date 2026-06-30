@@ -441,11 +441,18 @@ if (container) {
           ? item.content 
           : `《${item.content}》`;
         
+        const isAfternoon = item.type === 'afternoon';
+        
         return (
           <li key={index} className="item-troupe">
             <Flex gap="4px 0" wrap align="center">
               {troupeRender(item.troupe)}
               {locationRender(item.location)}
+              {isAfternoon && (
+                <Tag color="orange" style={{ fontSize: '10px', padding: '0 4px' }}>
+                  下午场
+                </Tag>
+              )}
             </Flex>
             <span className="item-content item-play-name">{content}</span>
           </li>
@@ -636,6 +643,9 @@ if (container) {
                       {troupeRender(item.troupe)}
                       {cityRender(item.city)}
                       {locationRender(item.location)}
+                      {item.type === 'afternoon' && (
+                        <Tag color="orange">下午场</Tag>
+                      )}
                     </Flex>
                   </div>
                   <div className="modal-event-content">

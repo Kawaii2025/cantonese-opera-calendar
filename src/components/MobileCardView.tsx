@@ -236,9 +236,21 @@ export const MobileCardView: React.FC<MobileCardViewProps> = ({
                           >
                             {event.city}
                           </span>
-                          <span style={{ fontSize: '12px', color: '#666', whiteSpace: 'nowrap' }}>
-                            {timeLabel}
-                          </span>
+                          {isAfternoon && (
+                            <span 
+                              style={{ 
+                                backgroundColor: '#fa8c16',
+                                color: 'white',
+                                padding: '4px 8px',
+                                borderRadius: '2px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              下午场
+                            </span>
+                          )}
                         </div>
                       </div>
 
